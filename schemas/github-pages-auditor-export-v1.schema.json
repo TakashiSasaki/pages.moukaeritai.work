@@ -1,0 +1,446 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/github-pages-auditor-export-v1.schema.json",
+  "title": "GitHub Pages Auditor Export",
+  "description": "Export document for GitHub Pages custom domain and deployment-method audit results.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "exportedAt",
+    "application",
+    "auditRun",
+    "summary",
+    "repositories"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "github-pages-auditor.export.v1"
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "environment": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "auditRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "startedAt", "finishedAt", "options"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": ["queued", "running", "completed", "failed", "paused", "cancelled"]
+        },
+        "startedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "finishedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "userMode": {
+          "type": "string",
+          "enum": ["google", "anonymous"]
+        },
+        "tokenType": {
+          "type": ["string", "null"],
+          "enum": ["fine_grained", "classic", "unknown", null]
+        },
+        "githubLogin": {
+          "type": ["string", "null"]
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "affiliation",
+            "visibility",
+            "includeArchived",
+            "includeDisabled",
+            "strictPagesCheck",
+            "includeHealthCheck"
+          ],
+          "properties": {
+            "affiliation": {
+              "type": "string"
+            },
+            "visibility": {
+              "type": "string",
+              "enum": ["all", "public", "private"]
+            },
+            "includeArchived": {
+              "type": "boolean"
+            },
+            "includeDisabled": {
+              "type": "boolean"
+            },
+            "strictPagesCheck": {
+              "type": "boolean"
+            },
+            "includeHealthCheck": {
+              "type": "boolean"
+            },
+            "ownerFilter": {
+              "type": ["string", "null"]
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repositoryCount",
+        "pagesEnabledCount",
+        "customDomainCount",
+        "customDomainVerifiedCount",
+        "customDomainUnverifiedOrUnknownCount",
+        "httpsProblemCount",
+        "dnsHealthProblemCount",
+        "errorCount",
+        "deploymentWorkflowCount",
+        "deploymentBranchRootCount",
+        "deploymentBranchDocsCount",
+        "deploymentUnknownCount"
+      ],
+      "properties": {
+        "repositoryCount": { "type": "integer", "minimum": 0 },
+        "pagesEnabledCount": { "type": "integer", "minimum": 0 },
+        "customDomainCount": { "type": "integer", "minimum": 0 },
+        "customDomainVerifiedCount": { "type": "integer", "minimum": 0 },
+        "customDomainUnverifiedOrUnknownCount": { "type": "integer", "minimum": 0 },
+        "httpsProblemCount": { "type": "integer", "minimum": 0 },
+        "dnsHealthProblemCount": { "type": "integer", "minimum": 0 },
+        "errorCount": { "type": "integer", "minimum": 0 },
+        "deploymentWorkflowCount": { "type": "integer", "minimum": 0 },
+        "deploymentBranchRootCount": { "type": "integer", "minimum": 0 },
+        "deploymentBranchDocsCount": { "type": "integer", "minimum": 0 },
+        "deploymentUnknownCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "repositories": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/repositoryResult" }
+    },
+    "domains": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/domainSummary" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "nullableDateTime": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "nullableUri": {
+      "type": ["string", "null"],
+      "format": "uri"
+    },
+    "classification": {
+      "type": "string",
+      "enum": [
+        "pages_disabled",
+        "pages_disabled_or_unavailable",
+        "pages_enabled_no_custom_domain",
+        "custom_domain_configured",
+        "custom_domain_verified",
+        "custom_domain_pending",
+        "custom_domain_unverified_or_unknown",
+        "https_certificate_ok",
+        "https_certificate_problem_or_unknown",
+        "https_not_enforced",
+        "dns_health_ok",
+        "dns_health_problem",
+        "insufficient_permissions",
+        "sso_required",
+        "rate_limited",
+        "api_error",
+        "pages_deploy_method_workflow",
+        "pages_deploy_method_branch_root",
+        "pages_deploy_method_branch_docs",
+        "pages_deploy_method_branch_unknown_path",
+        "pages_deploy_method_unknown"
+      ]
+    },
+    "errorClassification": {
+      "type": ["string", "null"],
+      "enum": [
+        "token_invalid_or_expired",
+        "insufficient_permissions",
+        "sso_required",
+        "classic_pat_sso_authorization_required",
+        "fine_grained_pat_approval_required",
+        "primary_rate_limited",
+        "secondary_rate_limited",
+        "forbidden_unknown",
+        "repository_not_found_or_no_access",
+        "pages_not_enabled",
+        "pages_resource_not_found",
+        "classic_pat_sso_authorization_missing_possible",
+        "validation_failed",
+        "health_no_cname",
+        "endpoint_spam_or_abuse_protection",
+        "github_temporary_error",
+        "api_error",
+        null
+      ]
+    },
+    "repositoryResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "repo",
+        "fullName",
+        "repositoryTopUrl",
+        "pagesSettingsUrl",
+        "private",
+        "visibility",
+        "archived",
+        "disabled",
+        "fork",
+        "hasPages",
+        "pagesEnabled",
+        "deploymentMethod",
+        "customDomainConfigured",
+        "classification",
+        "errorClassification"
+      ],
+      "properties": {
+        "githubRepoId": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repositoryTopUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "pagesSettingsUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "pagesUrl": {
+          "$ref": "#/$defs/nullableUri"
+        },
+        "private": {
+          "type": "boolean"
+        },
+        "visibility": {
+          "type": ["string", "null"],
+          "enum": ["public", "private", "internal", null]
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "disabled": {
+          "type": "boolean"
+        },
+        "fork": {
+          "type": "boolean"
+        },
+        "defaultBranch": {
+          "type": ["string", "null"]
+        },
+        "hasPages": {
+          "type": ["boolean", "null"]
+        },
+        "createdAtGitHub": {
+          "$ref": "#/$defs/nullableDateTime"
+        },
+        "updatedAtGitHub": {
+          "$ref": "#/$defs/nullableDateTime"
+        },
+        "pushedAtGitHub": {
+          "$ref": "#/$defs/nullableDateTime"
+        },
+        "pagesEnabled": {
+          "type": "boolean"
+        },
+        "pagesStatus": {
+          "type": ["string", "null"]
+        },
+        "buildType": {
+          "type": ["string", "null"]
+        },
+        "deploymentMethod": {
+          "type": "string",
+          "enum": [
+            "workflow",
+            "branch_root",
+            "branch_docs",
+            "branch_unknown_path",
+            "unknown",
+            "not_applicable"
+          ]
+        },
+        "sourceBranch": {
+          "type": ["string", "null"]
+        },
+        "sourcePath": {
+          "type": ["string", "null"]
+        },
+        "publishingSourceSummary": {
+          "type": ["string", "null"]
+        },
+        "pagesPublic": {
+          "type": ["boolean", "null"]
+        },
+        "customDomain": {
+          "type": ["string", "null"]
+        },
+        "customDomainConfigured": {
+          "type": "boolean"
+        },
+        "protectedDomainState": {
+          "type": ["string", "null"]
+        },
+        "pendingDomainUnverifiedAt": {
+          "$ref": "#/$defs/nullableDateTime"
+        },
+        "httpsCertificateState": {
+          "type": ["string", "null"]
+        },
+        "httpsCertificateDescription": {
+          "type": ["string", "null"]
+        },
+        "httpsCertificateDomains": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "httpsCertificateExpiresAt": {
+          "$ref": "#/$defs/nullableDateTime"
+        },
+        "httpsEnforced": {
+          "type": ["boolean", "null"]
+        },
+        "healthStatus": {
+          "type": ["string", "null"],
+          "enum": [
+            "not_requested",
+            "ok",
+            "health_pending",
+            "health_no_cname",
+            "health_custom_domains_unavailable",
+            "health_insufficient_permissions",
+            "health_dns_problem",
+            "health_https_problem",
+            "health_https_not_enforced",
+            "api_error",
+            null
+          ]
+        },
+        "classification": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/classification" },
+          "uniqueItems": true
+        },
+        "errorClassification": {
+          "$ref": "#/$defs/errorClassification"
+        },
+        "diagnostics": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "domainSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "repositoryCount",
+        "repositories",
+        "hasDuplicate",
+        "hasUnverified",
+        "hasHttpsProblem",
+        "hasDnsProblem"
+      ],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repositoryCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repositories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "fullName",
+              "repositoryTopUrl",
+              "pagesSettingsUrl"
+            ],
+            "properties": {
+              "fullName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "repositoryTopUrl": {
+                "type": "string",
+                "format": "uri"
+              },
+              "pagesSettingsUrl": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          }
+        },
+        "hasDuplicate": {
+          "type": "boolean"
+        },
+        "hasUnverified": {
+          "type": "boolean"
+        },
+        "hasHttpsProblem": {
+          "type": "boolean"
+        },
+        "hasDnsProblem": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "GitHub Pages Auditor",
+  "description": "A full-stack web application that audits GitHub Pages custom domains, HTTPS enforcement, and deployment settings across repositories safely.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
