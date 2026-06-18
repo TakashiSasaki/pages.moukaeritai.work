@@ -1,8 +1,9 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import fs from 'fs';
 import * as admin from 'firebase-admin';
-import { getApps } from 'firebase-admin/app';
+import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import dotenv from 'dotenv';
 
@@ -30,18 +31,17 @@ import {
 // Initialize Firebase Admin
 try {
   if (!getApps().length) {
-    const fs = require('fs');
     if (fs.existsSync('./firebase-applet-config.json')) {
       const config = JSON.parse(fs.readFileSync('./firebase-applet-config.json', 'utf-8'));
-      admin.initializeApp({
+      initializeApp({
         projectId: config.projectId,
       });
     } else {
-      admin.initializeApp();
+      initializeApp();
     }
   }
 } catch (error) {
-  console.warn("Firebase Admin Initialization missing config. Warning only for Dev environments.");
+  console.warn("Firebase Admin Initialization missing config. Warning only for Dev environments.", error);
 }
 
 const app = express();
@@ -68,10 +68,10 @@ async function verifyAuth(req: express.Request, res: express.Response, next: exp
     const decodedToken = await getAuth().verifyIdToken(idToken);
     (req as any).user = decodedToken;
     next();
-  } catch (error) {
+  } catch (error: any) {
     // SECURITY: Do not log Firebase ID tokens plaintext
-    console.error('Error verifying Firebase ID token signature/expiration');
-    return res.status(401).json({ error: 'Unauthorized' });
+    console.error('Error verifying Firebase ID token signature/expiration:', error);
+    return res.status(401).json({ error: 'Unauthorized', details: error.message });
   }
 }
 

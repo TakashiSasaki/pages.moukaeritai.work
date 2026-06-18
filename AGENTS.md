@@ -36,15 +36,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 
 ## Firestore Persistence Contract
 - Firestore used: Not used (Current MVP uses strictly in-memory storage).
-- Rationale: We are in the MVP phase building a safe foundation. Cloud Firestore will be introduced when persistent user audit history is required.
-- Firebase project id: Pending configuration.
-- Enabled Firebase Auth providers: Google provider, Anonymous provider.
-- Firestore namespace root: `githubPagesAuditorV1` (when implemented).
-- Environment document name: `dev` / `staging` / `prod`.
-- Persistent user path: `githubPagesAuditorV1/{environment}/users/{uid}`
-- Anonymous temporary path: `githubPagesAuditorV1/{environment}/anonymousSessions/{anonymousUid}`
-- PAT storage path: `githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/{tokenId}` (Stored securely via Firestore rules, server-only access)
-- Anonymous cleanup strategy: Delete temporary session and token data upon audit completion or via scheduled cleanup using `expiresAt`.
+- Rationale: We are in the MVP phase building a safe foundation. Cloud Firestore backend access via `firebase-admin` natively returns `PERMISSION_DENIED` in the sandbox environment, meaning we strictly rely on in-memory mapping to keep PATs secure and offline. Server-side static encryption is unnecessary as nothing is persisted to the file system.
 
 ## Cloud Functions Deployment Contract
 - Cloud Functions used: Not used.
@@ -68,7 +60,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Rate Limit Handling is fully integrated, evaluating headers (`x-ratelimit-remaining`, `retry-after`) and interrupting loops on `429` / `403`.
 
 ## PAT Storage Decision
-- For Version 1, PAT storage is handled via Cloud Firestore securely using Firestore Security Rules. Because PATs are stored in a secure managed configuration (Firestore) with strict server-side only read/write rules, additional static server-side encryption is not required.
+- For Version 1, PAT storage is handled strictly via temporary in-memory storage. Because PATs are stored ephemerally in server memory and not persisted across container restarts, additional static server-side encryption is not required. Cloud Firestore backend access via `firebase-admin` is deferred due to IAM access restrictions, keeping the MVP highly secure and stateless.
 
 ## JSON Export Schema Contract
 - JSON export schema version: `github-pages-auditor.export.v1`

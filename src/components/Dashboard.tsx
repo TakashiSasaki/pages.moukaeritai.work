@@ -329,7 +329,7 @@ export default function Dashboard() {
           </button>
         </div>
         <p className="text-xs text-gray-500">
-          Your token is securely processed and stored. It is protected by strict database security rules that prevent any direct client access.
+          Your token is securely processed in memory on our server. It is never persisted to disk and is safely isolated per session.
         </p>
       </div>
 
