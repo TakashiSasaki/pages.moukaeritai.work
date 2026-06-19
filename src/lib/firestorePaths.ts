@@ -30,3 +30,21 @@ export function getAuditCollectionPath(environment: string, uid: string): string
   const env = environment === 'production' ? 'production' : 'development';
   return `githubPagesAuditorV1/${env}/users/${uid}/audits`;
 }
+
+/**
+ * Returns the collection path for user settings.
+ */
+export function getUserSettingsCollectionPath(environment: string, uid: string, isAnonymous: boolean): string {
+  const env = environment === 'production' ? 'production' : 'development';
+  return isAnonymous
+    ? `githubPagesAuditorV1/${env}/anonymousSessions/${uid}/settings`
+    : `githubPagesAuditorV1/${env}/users/${uid}/settings`;
+}
+
+/**
+ * Returns the document path for a specific user setting.
+ */
+export function getUserSettingDocPath(environment: string, uid: string, isAnonymous: boolean, settingId: string): string {
+  return `${getUserSettingsCollectionPath(environment, uid, isAnonymous)}/${settingId}`;
+}
+

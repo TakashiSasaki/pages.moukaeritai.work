@@ -4,6 +4,8 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { RepositoryResult } from '../types';
 import { buildJsonExport, buildCsvExport } from '../export/exportBuilders';
 import { useAuth } from '../AuthContext';
+import Ajv from 'ajv';
+import schema from '@/schemas/github-pages-auditor-export-v1.schema.json';
 import { getEnvironmentName, getAuditCollectionPath } from '../lib/firestorePaths';
 import { 
   Play, 
@@ -91,17 +93,29 @@ export default function Dashboard() {
   const [columnGuideModal, setColumnGuideModal] = useState<string | null>(null);
   const [cachedAudit, setCachedAudit] = useState<{ auditId: string; createdAt: string } | null>(null);
   const [isLoadingCache, setIsLoadingCache] = useState(false);
+  const [validationResult, setValidationResult] = useState<{ valid: boolean; errors?: any[] | null } | null>(null);
+  const [isValidatingSchema, setIsValidatingSchema] = useState(false);
   const location = useLocation();
-  const activeTab = location.pathname.endsWith('/report') ? 'details' : 'summary';
+  const activeTab = location.pathname.endsWith('/report') 
+    ? 'details' 
+    : location.pathname.endsWith('/json') 
+      ? 'json' 
+      : location.pathname.endsWith('/schema') 
+        ? 'schema' 
+        : 'summary';
 
-  const handleTabChange = (tab: 'summary' | 'details') => {
+  const handleTabChange = (tab: 'summary' | 'details' | 'json' | 'schema') => {
     let basePath = auditId ? `/results/${auditId}` : '';
     if (!basePath) basePath = '/';
     
     if (tab === 'summary') {
       navigate(basePath);
-    } else {
+    } else if (tab === 'details') {
       navigate(basePath === '/' ? '/report' : `${basePath}/report`);
+    } else if (tab === 'json') {
+      navigate(basePath === '/' ? '/json' : `${basePath}/json`);
+    } else if (tab === 'schema') {
+      navigate(basePath === '/' ? '/schema' : `${basePath}/schema`);
     }
   };
 
@@ -311,6 +325,23 @@ export default function Dashboard() {
     }
   };
 
+  const getExportFilename = (extension: 'csv' | 'json') => {
+    const base = 'github-pages-audit';
+    const dateSrc = auditCreatedAt || new Date().toISOString();
+    const d = new Date(dateSrc);
+    if (isNaN(d.getTime())) {
+      return `${base}-current.${extension}`;
+    }
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    const seconds = pad(d.getSeconds());
+    return `${base}-${year}${month}${day}_${hours}${minutes}${seconds}.${extension}`;
+  };
+
   const exportJson = () => {
     if (!results) return;
     
@@ -320,7 +351,7 @@ export default function Dashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `github-pages-audit-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = getExportFilename('json');
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -333,10 +364,41 @@ export default function Dashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `github-pages-audit-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = getExportFilename('csv');
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const handleValidateSchema = () => {
+    if (!results) return;
+    setIsValidatingSchema(true);
+    setTimeout(() => {
+      try {
+        const exportData = buildJsonExport(results, "");
+        const ajv = new Ajv({ strict: false });
+        const validate = ajv.compile(schema);
+        const valid = validate(exportData);
+        setValidationResult({
+          valid: !!valid,
+          errors: validate.errors || null
+        });
+      } catch (err: any) {
+        console.error("AJV Validation error:", err);
+        setValidationResult({
+          valid: false,
+          errors: [{ message: err.message || 'Validation process encountered an unexpected runtime error' }]
+        });
+      } finally {
+        setIsValidatingSchema(false);
+      }
+    }, 150);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'json' && results && !validationResult) {
+      handleValidateSchema();
+    }
+  }, [activeTab, results]);
 
   // Filter & Search Logic on the results
   const filteredResults = results?.filter(r => {
@@ -387,15 +449,15 @@ export default function Dashboard() {
 
     let relative = '';
     if (diffSecs < 10) {
-      relative = 'たった今 (just now)';
+      relative = 'just now';
     } else if (diffSecs < 60) {
-      relative = `${diffSecs}秒前 (${diffSecs}s ago)`;
+      relative = `${diffSecs}s ago`;
     } else if (diffMins < 60) {
-      relative = `${diffMins}分前 (${diffMins}m ago)`;
+      relative = `${diffMins}m ago`;
     } else if (diffHours < 24) {
-      relative = `${diffHours}時間前 (${diffHours}h ago)`;
+      relative = `${diffHours}h ago`;
     } else {
-      relative = `${diffDays}日前 (${diffDays}d ago)`;
+      relative = `${diffDays}d ago`;
     }
 
     return { absolute, relative };
@@ -633,6 +695,18 @@ export default function Dashboard() {
               >
                 Full Report
               </button>
+              <button
+                onClick={() => handleTabChange('json')}
+                className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'json' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                JSON
+              </button>
+              <button
+                onClick={() => handleTabChange('schema')}
+                className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'schema' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Schema
+              </button>
             </div>,
             document.getElementById('navbar-center-slot')!
           )}
@@ -641,18 +715,30 @@ export default function Dashboard() {
             <div className="py-2 bg-slate-50/80 border-t border-slate-200 text-gray-500 font-medium">
               <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 px-3 sm:px-4">
                 {/* Mobile Tabs (fallback for center slot) */}
-                <div className="flex lg:hidden space-x-1 p-0.5 bg-slate-200 rounded-lg max-w-fit">
+                <div className="flex lg:hidden space-x-1 p-0.5 bg-slate-200 rounded-lg max-w-fit flex-wrap">
                   <button
                     onClick={() => handleTabChange('summary')}
-                    className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'summary' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'summary' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                   >
                     Summary
                   </button>
                   <button
                     onClick={() => handleTabChange('details')}
-                    className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'details' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'details' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                   >
                     Full Report
+                  </button>
+                  <button
+                    onClick={() => handleTabChange('json')}
+                    className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'json' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    JSON
+                  </button>
+                  <button
+                    onClick={() => handleTabChange('schema')}
+                    className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'schema' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Schema
                   </button>
                 </div>
 
@@ -690,173 +776,121 @@ export default function Dashboard() {
 
           {/* Key Metrics Grid */}
           {activeTab === 'summary' && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-            <div className="bg-slate-50/50 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors flex flex-col justify-between">
-              <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider block">Total</span>
-              <div className="mt-1 flex items-baseline justify-between">
-                <span className="text-xl sm:text-2xl font-bold text-gray-900">{results.length}</span>
-                <span className="text-[9px] sm:text-xs text-gray-400">Repos</span>
-              </div>
-            </div>
-            <div className="bg-slate-50/50 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors flex flex-col justify-between">
-              <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider block">Pages Enabled</span>
-              <div className="mt-1 flex items-baseline justify-between">
-                <span className="text-xl sm:text-2xl font-bold text-gray-900">{pagesEnabledList.length}</span>
-                <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-150 px-1.5 py-0.5 rounded-full">
-                  {results.length ? Math.round((pagesEnabledList.length / results.length) * 100) : 0}%
-                </span>
-              </div>
-            </div>
-            <div className="bg-slate-50/50 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors relative group flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider block">Domains</span>
-                <button 
-                  type="button"
-                  onClick={() => setShowDomainLockGuide(true)}
-                  className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-medium border-0 bg-transparent p-0 outline-none"
-                  title="Click to view explanation"
-                >
-                  <span className="hidden sm:inline text-[9px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">❓ Info</span>
-                  <Info className="w-3 h-3" />
-                </button>
-              </div>
-              <div className="mt-1">
-                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-0">
-                  <span className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {results.filter(r => !!r.cname).length}
-                  </span>
-                  <span className="self-start sm:self-auto text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 rounded-full whitespace-nowrap">
-                    {results.filter(r => !!r.cname && r.httpsCertificateState === 'approved').length} SSL OK
-                  </span>
+            <div className="space-y-4 animate-fade-in">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div className="bg-slate-50/50 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors flex flex-col justify-between">
+                  <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider block">Total</span>
+                  <div className="mt-1 flex items-baseline justify-between">
+                    <span className="text-xl sm:text-2xl font-bold text-gray-900">{results.length}</span>
+                    <span className="text-[9px] sm:text-xs text-gray-400">Repos</span>
+                  </div>
                 </div>
-                <div className="mt-1 pt-1 border-t border-slate-200/60 flex justify-between items-center text-[9px] text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <span>Verified:</span>
+                <div className="bg-slate-50/50 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors flex flex-col justify-between">
+                  <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider block">Pages Enabled</span>
+                  <div className="mt-1 flex items-baseline justify-between">
+                    <span className="text-xl sm:text-2xl font-bold text-gray-900">{pagesEnabledList.length}</span>
+                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-150 px-1.5 py-0.5 rounded-full">
+                      {results.length ? Math.round((pagesEnabledList.length / results.length) * 100) : 0}%
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors relative group flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider block">Domains</span>
                     <button 
                       type="button"
                       onClick={() => setShowDomainLockGuide(true)}
-                      className="text-blue-500 hover:text-blue-700 underline font-medium cursor-pointer border-0 bg-transparent p-0 outline-none"
+                      className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-medium border-0 bg-transparent p-0 outline-none"
+                      title="Click to view explanation"
                     >
-                      Protection Lock?
+                      <span className="hidden sm:inline text-[9px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">❓ Info</span>
+                      <Info className="w-3 h-3" />
                     </button>
-                  </span>
-                  <span className="font-semibold text-slate-600">
-                    {results.filter(r => r.customDomainStatus === 'custom_domain_verified').length}
-                  </span>
+                  </div>
+                  <div className="mt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-0">
+                      <span className="text-xl sm:text-2xl font-bold text-gray-900">
+                        {results.filter(r => !!r.cname).length}
+                      </span>
+                      <span className="self-start sm:self-auto text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 rounded-full whitespace-nowrap">
+                        {results.filter(r => !!r.cname && r.httpsCertificateState === 'approved').length} SSL OK
+                      </span>
+                    </div>
+                    <div className="mt-1 pt-1 border-t border-slate-200/60 flex justify-between items-center text-[9px] text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <span>Verified:</span>
+                        <button 
+                          type="button"
+                          onClick={() => setShowDomainLockGuide(true)}
+                          className="text-blue-500 hover:text-blue-700 underline font-medium cursor-pointer border-0 bg-transparent p-0 outline-none"
+                        >
+                          Protection Lock?
+                        </button>
+                      </span>
+                      <span className="font-semibold text-slate-600">
+                        {results.filter(r => r.customDomainStatus === 'custom_domain_verified').length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors flex flex-col justify-between">
+                  <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider block">Action Deploy</span>
+                  <div className="mt-1 flex items-baseline justify-between">
+                    <span className="text-xl sm:text-2xl font-bold text-gray-900">
+                      {results.filter(r => r.deploymentMethod === 'workflow').length}
+                    </span>
+                    <span className="text-xs text-gray-400 whitespace-nowrap font-sans">Modern build</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Seamless Unfiltered Export Section with Cache Datetime */}
+              <div className="bg-slate-50/40 p-5 rounded-xl border border-gray-200 mt-4 shadow-3xs flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="space-y-1 text-center md:text-left flex-1">
+                  <h4 className="text-sm font-semibold text-slate-900 flex items-center justify-center md:justify-start gap-1.5">
+                    <Download className="w-4 h-4 text-emerald-600" />
+                    監査レポートのダウンロード (Export Audit Data)
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    現在取得できているすべての監査データをダウンロードします。GitHub APIから取得した時点（データキャッシュ日時: <span className="font-mono text-slate-700 font-semibold">{formattedTime?.absolute || 'N/A'}</span>）のまま、<strong>検索やフィルタリングなどの抽出条件は無視して、常にすべてのリポジトリ情報</strong>をエクスポートします。
+                  </p>
+                </div>
+                <div className="flex gap-2.5 w-full md:w-auto justify-center">
+                  <button 
+                    onClick={exportCsv} 
+                    className="flex-1 md:flex-initial px-4 py-2 bg-white text-slate-800 rounded-lg hover:bg-slate-50 flex items-center justify-center border border-slate-200 shadow-2xs text-xs font-semibold hover:border-slate-300 transition-colors cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                    CSVをダウンロード
+                  </button>
+                  <button 
+                    onClick={exportJson} 
+                    className="flex-1 md:flex-initial px-4 py-2 bg-white text-slate-800 rounded-lg hover:bg-slate-50 flex items-center justify-center border border-slate-200 shadow-2xs text-xs font-semibold hover:border-slate-300 transition-colors cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                    JSONをダウンロード
+                  </button>
                 </div>
               </div>
             </div>
-            <div className="bg-slate-50/50 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors flex flex-col justify-between">
-              <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider block">Action Deploy</span>
-              <div className="mt-1 flex items-baseline justify-between">
-                <span className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {results.filter(r => r.deploymentMethod === 'workflow').length}
-                </span>
-                <span className="text-xs text-gray-400 whitespace-nowrap font-sans">Modern build</span>
-              </div>
-            </div>
-          </div>
           )}
 
           {activeTab === 'details' && (
             <>
-          {/* Table Toolbar (Search and Filter controls) - Flat & Seamless */}
-          <div className="py-2 space-y-2 animate-fade-in px-4 lg:px-0">
-            <div className="flex flex-col md:flex-row gap-2">
-              {/* Search Bar */}
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" />
-                <input 
-                  type="text" 
-                  placeholder="Filter by repository name or custom domain..."
-                  className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg focus:ring-slate-900 focus:border-slate-900 outline-none text-xs bg-slate-50/50"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-1.5 flex-wrap">
-                <button 
-                  onClick={exportCsv} 
-                  className="px-2.5 py-1.5 bg-white text-gray-750 rounded-lg hover:bg-gray-50 flex items-center border border-gray-200 shadow-2xs text-xs font-medium transition-colors cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
-                  CSV
-                </button>
-                <button 
-                  onClick={exportJson} 
-                  className="px-2.5 py-1.5 bg-white text-gray-750 rounded-lg hover:bg-gray-50 flex items-center border border-gray-200 shadow-2xs text-xs font-medium transition-colors cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
-                  JSON
-                </button>
-              </div>
-            </div>
-
-            {/* Filter Pills */}
-            <div className="flex flex-wrap items-center gap-3.5 text-xs pt-1.5 border-t border-gray-100">
-              <div className="flex items-center text-gray-450 bg-slate-50 px-2 py-0.5 rounded border border-gray-150">
-                <Filter className="w-3 h-3 mr-1" />
-                <span className="font-medium text-[10px] uppercase tracking-wider text-slate-500">Filters</span>
-              </div>
-              
-              {/* Pages status */}
-              <div className="flex items-center space-x-1">
-                <span className="text-gray-400 text-[11px]">Pages:</span>
-                <select 
-                  className="bg-white border border-gray-200 rounded px-2 py-0.5 text-xs outline-none focus:border-slate-900"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                >
-                  <option value="all">All</option>
-                  <option value="enabled">Enabled</option>
-                  <option value="disabled">Disabled</option>
-                </select>
-              </div>
-
-              {/* Custom Domain status */}
-              <div className="flex items-center space-x-1">
-                <span className="text-gray-400 text-[11px]">Domain:</span>
-                <select 
-                  className="bg-white border border-gray-200 rounded px-2 py-0.5 text-xs outline-none focus:border-slate-900"
-                  value={domainFilter}
-                  onChange={(e) => setDomainFilter(e.target.value as any)}
-                >
-                  <option value="all">All</option>
-                  <option value="custom">Configured</option>
-                  <option value="none">No Custom Domain</option>
-                  <option value="unverified">Unverified/Unknown</option>
-                  <option value="pending">Pending Verification</option>
-                </select>
-              </div>
-
-              {/* HTTPS status */}
-              <div className="flex items-center space-x-1">
-                <span className="text-gray-400 text-[11px]">HTTPS:</span>
-                <select 
-                  className="bg-white border border-gray-200 rounded px-2 py-0.5 text-xs outline-none focus:border-slate-900"
-                  value={httpsFilter}
-                  onChange={(e) => setHttpsFilter(e.target.value as any)}
-                >
-                  <option value="all">All</option>
-                  <option value="ok">Approved & Enforced</option>
-                  <option value="not_enforced">Not Enforced</option>
-                  <option value="problem">Problem/Unknown</option>
-                </select>
-              </div>
-
+          {/* Results Table view - Seamless Flat High-Density Layout */}
+          <div className="flex-1 overflow-auto border-b border-gray-200 bg-white mt-1 animate-fade-in relative">
+            <div className="min-h-full">
               {results && (
-                <div className="ml-auto text-gray-400 font-mono text-[11px]">
-                  Showing {filteredResults.length} of {results.length} results
+                <div className="sticky top-0 left-0 right-0 z-30 px-3 py-1.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-gray-500 font-mono text-[10px]">
+                  <span className="flex items-center gap-1.5 font-sans font-medium text-slate-700">
+                    <Filter className="w-3.5 h-3.5 text-slate-500" />
+                    カラム別フィルタリング
+                  </span>
+                  <span>
+                    Showing {filteredResults.length} of {results.length} results
+                  </span>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Results Table view - Seamless Flat High-Density Layout */}
-          <div className="flex-1 overflow-auto border-b border-gray-200 bg-white mt-2">
-            <div className="min-h-full">
               <table className="min-w-[960px] w-full divide-y divide-gray-200 font-sans text-xs border-separate border-spacing-0">
                 <thead className="bg-slate-50 font-mono">
                   <tr>
@@ -904,6 +938,77 @@ export default function Dashboard() {
                       </div>
                     </th>
                     <th scope="col" className="sticky top-0 z-40 bg-slate-50 px-3 py-2 text-right font-semibold text-slate-600 uppercase tracking-wider text-[11px] border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">Link</th>
+                  </tr>
+                  {/* カラムヘッダ名の直下に配置するフィルタリングUI行 */}
+                  <tr className="bg-slate-100/75">
+                    <th scope="col" className="sticky top-[29px] left-0 z-50 bg-slate-100/95 px-1 py-1 border-r border-b border-slate-200 text-center">
+                      <button 
+                        onClick={() => {
+                          setSearchQuery('');
+                          setStatusFilter('all');
+                          setDomainFilter('all');
+                          setHttpsFilter('all');
+                        }}
+                        className="text-[9px] px-1 py-0.5 bg-white border border-slate-300 rounded text-slate-500 hover:text-slate-800 hover:border-slate-400 transition-colors cursor-pointer w-full"
+                        title="Clear all filters"
+                        disabled={!searchQuery && statusFilter === 'all' && domainFilter === 'all' && httpsFilter === 'all'}
+                      >
+                        Reset
+                      </button>
+                    </th>
+                    <th scope="col" className="sticky top-[29px] left-10 z-50 bg-slate-100/95 px-2 py-1 border-r border-b border-slate-200 text-left">
+                      <div className="relative">
+                        <Search className="w-3 h-3 text-slate-400 absolute left-2 top-1.5" />
+                        <input 
+                          type="text" 
+                          placeholder="Search repo/domain..."
+                          className="w-full pl-6 pr-2 py-0.5 border border-slate-200 rounded text-[11px] font-sans font-normal bg-white outline-none focus:border-slate-800"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                    </th>
+                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left">
+                      <select 
+                        className="w-full bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-sans font-normal outline-none focus:border-slate-800"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                      >
+                        <option value="all">All Pages</option>
+                        <option value="enabled">Enabled</option>
+                        <option value="disabled">Disabled</option>
+                      </select>
+                    </th>
+                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left text-slate-400 italic font-sans font-normal text-[10px] text-center">
+                      —
+                    </th>
+                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left">
+                      <select 
+                        className="w-full bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-sans font-normal outline-none focus:border-slate-800"
+                        value={domainFilter}
+                        onChange={(e) => setDomainFilter(e.target.value as any)}
+                      >
+                        <option value="all">All Domains</option>
+                        <option value="custom">Configured</option>
+                        <option value="none">No Custom</option>
+                        <option value="unverified">Unverified/Unknown</option>
+                        <option value="pending">Pending Verif.</option>
+                      </select>
+                    </th>
+                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left">
+                      <select 
+                        className="w-full bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-sans font-normal outline-none focus:border-slate-800"
+                        value={httpsFilter}
+                        onChange={(e) => setHttpsFilter(e.target.value as any)}
+                      >
+                        <option value="all">All HTTPS</option>
+                        <option value="ok">Approved & Enforced</option>
+                        <option value="not_enforced">Not Enforced</option>
+                        <option value="problem">Problem/Unknown</option>
+                      </select>
+                    </th>
+                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-right font-normal">
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100 font-mono text-xs">
@@ -1078,6 +1183,117 @@ export default function Dashboard() {
           </div>
           </>
           )}
+
+          {activeTab === 'json' && results && (
+            <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 text-slate-100 rounded-xl border border-slate-800 p-4 min-h-[450px] animate-fade-in relative shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-3 mb-4 gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5 font-mono">
+                    <Database className="w-4 h-4 text-emerald-400 animate-pulse" />
+                    Export Payload (JSON View)
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                    This represents the exact JSON output that will be downloaded via the "JSONをダウンロード" button.
+                  </p>
+                </div>
+                <div className="flex gap-2.5 flex-wrap">
+                  <button
+                    onClick={handleValidateSchema}
+                    disabled={isValidatingSchema}
+                    className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white rounded-lg flex items-center shadow-md text-xs font-semibold cursor-pointer transition-colors"
+                  >
+                    {isValidatingSchema ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                        Validating...
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-indigo-200" />
+                        Run Schema Check
+                      </>
+                    )}
+                  </button>
+                  <CopyButton text={JSON.stringify(buildJsonExport(results, ""), null, 2)} />
+                </div>
+              </div>
+
+              {/* Validation Feedback Banner */}
+              {validationResult ? (
+                validationResult.valid ? (
+                  <div className="mb-4 p-3 bg-emerald-950/80 border border-emerald-800 text-emerald-300 rounded-lg flex items-start text-xs font-medium shadow-xs">
+                    <CheckCircle className="w-4 h-4 mr-2 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-emerald-200 font-semibold text-[13px] block mb-0.5">Schema Validation Passed!</strong>
+                      <span className="leading-relaxed text-emerald-400">This audit run output conforms strictly to the specified JSON schema layout rules (github-pages-auditor.export.v1).</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-4 p-3 bg-rose-950/80 border border-rose-800 text-rose-300 rounded-lg flex items-start text-xs font-medium shadow-xs">
+                    <AlertCircle className="w-4 h-4 mr-2 text-rose-400 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1 w-full">
+                      <strong className="text-rose-200 font-semibold text-[13px] block mb-0.5">Schema Validation Failed</strong>
+                      <span className="leading-relaxed block text-rose-200">Validation errors found:</span>
+                      <ul className="list-disc pl-5 space-y-1 font-mono text-[10px] mt-1 text-rose-300 bg-rose-950/60 p-2 rounded border border-rose-900 max-h-32 overflow-y-auto">
+                        {validationResult.errors?.map((err, i) => (
+                          <li key={i} className="leading-normal">
+                            <span className="text-rose-400 font-semibold font-mono">[{err.instancePath || 'root'}]</span> {err.message} {err.params ? JSON.stringify(err.params) : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <div className="mb-4 p-3 bg-slate-950 text-slate-400 border border-slate-800 rounded-lg flex items-center justify-between text-xs font-medium">
+                  <span className="flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4 text-slate-500" />
+                    Validation has not run yet. Press "Run Schema Check" to verify structure.
+                  </span>
+                </div>
+              )}
+
+              {/* High-density code preview */}
+              <div className="flex-1 overflow-auto bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 select-text max-h-[600px]">
+                <div className="space-y-0.5 select-text">
+                  {highlightJson(JSON.stringify(buildJsonExport(results, ""), null, 2))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'schema' && (
+            <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 text-slate-100 rounded-xl border border-slate-800 p-4 min-h-[450px] animate-fade-in relative shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-3 mb-4 gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5 font-mono">
+                    <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                    JSON Schema (Specification)
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                    This is the schema definition conforming to Draft-07 syntax, located in <span className="font-mono text-slate-200">schemas/github-pages-auditor-export-v1.schema.json</span>.
+                  </p>
+                </div>
+                <CopyButton text={JSON.stringify(schema, null, 2)} />
+              </div>
+
+              {/* Informational banner */}
+              <div className="mb-4 p-3 bg-indigo-950/60 border border-indigo-900 text-indigo-300 rounded-lg flex items-start text-xs font-medium shadow-xs">
+                <Info className="w-4 h-4 mr-2 text-indigo-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-indigo-200 font-semibold text-[12px] block mb-0.5">Schema Truth Policy</strong>
+                  <span className="leading-relaxed text-indigo-400">Any structure-affecting changes to the TS definitions in <code className="bg-indigo-950/80 px-1 py-0.5 rounded font-mono text-indigo-100">src/schema/exportTypes.ts</code> must automatically compile down to update this output dynamically during code validation.</span>
+                </div>
+              </div>
+
+              {/* High-density code preview */}
+              <div className="flex-1 overflow-auto bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 select-text max-h-[600px]">
+                <div className="space-y-0.5 select-text">
+                  {highlightJson(JSON.stringify(schema, null, 2))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1158,5 +1374,102 @@ function UnlockWarningIcon(props: React.SVGProps<SVGSVGElement>) {
       <path d="M7 11V7a5 5 0 0 1 9.9-1" />
     </svg>
   );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
+  return (
+    <button
+      onClick={handleCopy}
+      className="px-2.5 py-1.5 bg-slate-800 text-slate-200 hover:text-white rounded-lg hover:bg-slate-700 flex items-center border border-slate-700 shadow-2xs text-xs font-semibold hover:border-slate-600 transition-all cursor-pointer"
+    >
+      {copied ? (
+        <>
+          <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-405" />
+          Copied!
+        </>
+      ) : (
+        <>
+          <Save className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+          コピーする
+        </>
+      )}
+    </button>
+  );
+}
+
+// Simple custom tokenizer to syntax highlight JSON strings
+function highlightJson(str: string): React.ReactNode[] {
+  const lines = str.split('\n');
+  
+  return lines.map((line, i) => {
+    // We match leading spaces and keep them
+    const indentMatch = line.match(/^(\s*)/);
+    const indent = indentMatch ? indentMatch[1] : '';
+    let remaining = line.substring(indent.length);
+    
+    const parts: React.ReactNode[] = [];
+    parts.push(<span key="indent">{indent}</span>);
+    
+    // Match key: "key":
+    const keyMatch = remaining.match(/^("[^"]+")\s*:/);
+    if (keyMatch) {
+      parts.push(<span key="key" className="text-purple-400 font-semibold">{keyMatch[1]}</span>);
+      parts.push(<span key="colon" className="text-slate-400">:</span>);
+      remaining = remaining.substring(keyMatch[0].length);
+    }
+    
+    // Match rest of values
+    while (remaining.length > 0) {
+      const stringValueMatch = remaining.match(/^(\s*"[^"]*")([, ]*)/);
+      const numberValueMatch = remaining.match(/^(\s*[0-9.-]+)([, ]*)/);
+      const boolValueMatch = remaining.match(/^(\s*(true|false))([, ]*)/);
+      const nullValueMatch = remaining.match(/^(\s*null)([, ]*)/);
+      const bracketMatch = remaining.match(/^(\s*[{}\[\]]+)([, ]*)/);
+      
+      if (stringValueMatch) {
+        parts.push(<span key={`str-${remaining.length}`} className="text-emerald-400 font-medium">{stringValueMatch[1]}</span>);
+        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{stringValueMatch[2]}</span>);
+        remaining = remaining.substring(stringValueMatch[0].length);
+      } else if (numberValueMatch) {
+        parts.push(<span key={`num-${remaining.length}`} className="text-amber-500 font-mono">{numberValueMatch[1]}</span>);
+        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{numberValueMatch[2]}</span>);
+        remaining = remaining.substring(numberValueMatch[0].length);
+      } else if (boolValueMatch) {
+        parts.push(<span key={`bool-${remaining.length}`} className="text-blue-400 font-semibold">{boolValueMatch[1]}</span>);
+        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{boolValueMatch[2]}</span>);
+        remaining = remaining.substring(boolValueMatch[0].length);
+      } else if (nullValueMatch) {
+        parts.push(<span key={`null-${remaining.length}`} className="text-rose-400 italic">{nullValueMatch[1]}</span>);
+        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{nullValueMatch[2]}</span>);
+        remaining = remaining.substring(nullValueMatch[0].length);
+      } else if (bracketMatch) {
+        parts.push(<span key={`bracket-${remaining.length}`} className="text-slate-400 font-medium">{bracketMatch[1]}</span>);
+        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{bracketMatch[2]}</span>);
+        remaining = remaining.substring(bracketMatch[0].length);
+      } else {
+        parts.push(<span key={`rest-${remaining.length}`} className="text-slate-300">{remaining}</span>);
+        break;
+      }
+    }
+    
+    return (
+      <div key={i} className="flex min-h-[1.25rem] leading-normal font-mono hover:bg-slate-800/50 transition-colors min-w-max">
+        {/* Line Number */}
+        <span className="w-12 select-none text-right pr-4 text-slate-500 font-mono text-[10px] border-r border-slate-800 mr-4 shrink-0">
+          {i + 1}
+        </span>
+        <span className="select-all whitespace-pre pr-4">
+          {parts}
+        </span>
+      </div>
+    );
+  });
 }
 

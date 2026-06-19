@@ -4,10 +4,11 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import { AuthProvider, useAuth } from './AuthContext';
 import { validateFrontendFirebaseConfig } from './lib/env';
+import { saveLastPath, getLastPath } from './lib/userPrefs';
 import { LogOut, LogIn, UserCircle, Ghost, Key, Save, Loader2, CheckCircle, Github, HelpCircle, X, AlertCircle, Database, ShieldCheck, XCircle } from 'lucide-react';
 
 function AppContent() {
@@ -25,6 +26,42 @@ function AppContent() {
 
   const [showHeader, setShowHeader] = useState(true);
   const lastScrollY = useRef(0);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [hasRedirected, setHasRedirected] = useState(false);
+
+  // Redirect to last saved path when visiting the top page
+  useEffect(() => {
+    if (loading || !user || hasRedirected) return;
+
+    const checkAndRedirect = async () => {
+      if (location.pathname === '/' || location.pathname === '') {
+        const savedPath = await getLastPath(user.uid, user.isAnonymous);
+        if (savedPath && savedPath !== '/' && savedPath !== '') {
+          console.log('Automatically redirecting to last visited path:', savedPath);
+          setHasRedirected(true);
+          navigate(savedPath, { replace: true });
+          return;
+        }
+      }
+      setHasRedirected(true);
+    };
+
+    checkAndRedirect();
+  }, [user, loading, location.pathname, hasRedirected, navigate]);
+
+  // Save current path to Firestore when user navigates
+  useEffect(() => {
+    if (!user || loading) return;
+
+    // Wait until the initial redirect check has set hasRedirected to true
+    if (!hasRedirected) return;
+
+    const fullPath = location.pathname + location.search + location.hash;
+    console.log('Recording last path:', fullPath);
+    saveLastPath(user.uid, user.isAnonymous, fullPath);
+  }, [location, user, loading, hasRedirected]);
 
   const savePat = async () => {
     if (!pat) {
@@ -158,8 +195,7 @@ function AppContent() {
   }
 
   return (
-    <Router>
-      <div className="h-[100dvh] bg-gray-50 text-gray-900 font-sans flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-gray-50 text-gray-900 font-sans flex flex-col overflow-hidden">
         <nav className={`bg-white border-b border-gray-200 sticky top-0 z-50 transition-transform duration-300 shadow-sm ${showHeader ? 'translate-y-0' : '-translate-y-full'}`}>
           <div className="px-3 py-2 sm:px-4 sm:py-3">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -290,8 +326,12 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/report" element={<Dashboard />} />
+            <Route path="/json" element={<Dashboard />} />
+            <Route path="/schema" element={<Dashboard />} />
             <Route path="/results/:auditId" element={<Dashboard />} />
             <Route path="/results/:auditId/report" element={<Dashboard />} />
+            <Route path="/results/:auditId/json" element={<Dashboard />} />
+            <Route path="/results/:auditId/schema" element={<Dashboard />} />
           </Routes>
         </main>
         <footer className="shrink-0 w-full bg-white border-t border-slate-200 py-3 mt-auto">
@@ -425,14 +465,15 @@ function AppContent() {
           </div>
         )}
       </div>
-    </Router>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </Router>
   );
 }

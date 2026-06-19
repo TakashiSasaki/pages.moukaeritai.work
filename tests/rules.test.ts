@@ -48,10 +48,24 @@ class RulesSimulator {
       condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
     });
 
+    // 2b. match /githubPagesAuditorV1/{environment}/users/{uid}/settings/{settingId}
+    this.rules.push({
+      pattern: /^githubPagesAuditorV1\/([^\/]+)\/users\/([^\/]+)\/settings\/([^\/]+)$/,
+      paramMap: { environment: 1, uid: 2, settingId: 3 },
+      condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
+    });
+
     // 3. match /githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default
     this.rules.push({
       pattern: /^githubPagesAuditorV1\/([^\/]+)\/anonymousSessions\/([^\/]+)\/githubTokens\/default$/,
       paramMap: { environment: 1, uid: 2 },
+      condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
+    });
+
+    // 3b. match /githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/settings/{settingId}
+    this.rules.push({
+      pattern: /^githubPagesAuditorV1\/([^\/]+)\/anonymousSessions\/([^\/]+)\/settings\/([^\/]+)$/,
+      paramMap: { environment: 1, uid: 2, settingId: 3 },
       condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
     });
 
@@ -113,6 +127,24 @@ describe('Firestore Rules Simulation Diagnostics', () => {
     const auth = { uid: 'userA' };
     const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userB/audits/audit123', auth);
     assert.strictEqual(allowed, false, 'User A must not access user B audits');
+  });
+
+  it('allows authenticated users to read/write their own settings', () => {
+    const auth = { uid: 'userA' };
+    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userA/settings/navigation', auth);
+    assert.strictEqual(allowed, true, 'User A should read/write their own settings');
+  });
+
+  it('allows anonymous guests to read/write their own session settings', () => {
+    const auth = { uid: 'anon123' };
+    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/anonymousSessions/anon123/settings/navigation', auth);
+    assert.strictEqual(allowed, true, 'Anonymous User should read/write their own settings');
+  });
+
+  it('denies User A from reading or writing User B settings (cross-tenant isolation)', () => {
+    const auth = { uid: 'userA' };
+    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userB/settings/navigation', auth);
+    assert.strictEqual(allowed, false, 'User A must not access user B settings');
   });
 
   it('denies access when user is unauthenticated', () => {

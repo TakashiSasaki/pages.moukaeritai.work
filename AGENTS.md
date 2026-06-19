@@ -46,7 +46,8 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 ## Firestore Persistence Contract
 - Firestore used: Yes.
 - PATs are securely stored in `githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default` (for persistent users) and `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default` (for anonymous users) via the **Firebase Client SDK directly from the React frontend**.
-- Audit caches are similarly stored in `githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}` via the Client SDK.
+- Audit caches are stored in `githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}` via the Client SDK.
+- Last visited paths and user preferences are stored in `githubPagesAuditorV1/{environment}/users/{uid}/settings/{settingId}` and `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/settings/{settingId}` under the `navigation` setting ID.
 - Security Rules: Client access is tightly secured to `request.auth.uid == uid`. No cross-user access allowed.
 
 ## Cloud Functions Deployment Contract
@@ -120,8 +121,8 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
   - `vite.config.ts`: Present
   - `src/lib/firebase.ts`: Present
 - **Rules Path Tenanting**:
-  - Google authenticated users: `githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default` and `githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}`
-  - Anonymous guest users: `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default`
+  - Google authenticated users: `githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default`, `githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}`, and `githubPagesAuditorV1/{environment}/users/{uid}/settings/{settingId}`
+  - Anonymous guest users: `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default` and `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/settings/{settingId}`
   - Restricts access strictly to matching `request.auth.uid == uid` and blocks all other paths, denying generic top-level collections (e.g. `/users`, `/tokens`).
 - **Deploy Command**: `firebase deploy --only firestore:rules` after choosing your active Firebase project.
 - **Rule Verification**: Done via `npx tsx --test tests/rules.test.ts` (runs pre-compiled simulations matching rules logic under the standard Node unit runner).

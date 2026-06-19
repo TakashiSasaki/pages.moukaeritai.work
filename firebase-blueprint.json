@@ -35,6 +35,17 @@
          "updatedAt": { "type": "string", "format": "date-time" }
        },
        "required": ["anonymousUid", "expiresAt"]
+     },
+     "UserSetting": {
+       "title": "UserSetting",
+       "description": "Represents persistent app preferences or navigation states for standard or guest users.",
+       "type": "object",
+       "properties": {
+         "lastPath": { "type": "string" },
+         "updatedAt": { "type": "string", "format": "date-time" }
+       },
+       "required": ["lastPath"]
+     }
     }
   },
   "firestore": {
@@ -46,6 +57,10 @@
        "schema": { "$ref": "#/entities/GitHubToken" },
        "description": "PAT storage for persistent users, never read directly by clients"
     },
+    "/githubPagesAuditorV1/dev/users/{uid}/settings/{settingId}": {
+       "schema": { "$ref": "#/entities/UserSetting" },
+       "description": "User specific app parameters and history"
+    },
     "/githubPagesAuditorV1/dev/anonymousSessions/{anonymousUid}": {
        "schema": { "$ref": "#/entities/AnonymousSession" },
        "description": "Guest session data"
@@ -53,6 +68,10 @@
     "/githubPagesAuditorV1/dev/anonymousSessions/{anonymousUid}/githubTokens/{tokenId}": {
        "schema": { "$ref": "#/entities/GitHubToken" },
        "description": "PAT storage for anonymous users, never read directly by clients"
+    },
+    "/githubPagesAuditorV1/dev/anonymousSessions/{anonymousUid}/settings/{settingId}": {
+       "schema": { "$ref": "#/entities/UserSetting" },
+       "description": "Guest specific app parameters and history"
     },
     "/githubPagesAuditorV1/prod/users/{uid}": {
        "schema": { "$ref": "#/entities/User" },
@@ -62,6 +81,10 @@
        "schema": { "$ref": "#/entities/GitHubToken" },
        "description": "PAT storage for persistent users, never read directly by clients"
     },
+    "/githubPagesAuditorV1/prod/users/{uid}/settings/{settingId}": {
+       "schema": { "$ref": "#/entities/UserSetting" },
+       "description": "User specific app parameters and history"
+    },
     "/githubPagesAuditorV1/prod/anonymousSessions/{anonymousUid}": {
        "schema": { "$ref": "#/entities/AnonymousSession" },
        "description": "Guest session data"
@@ -69,6 +92,10 @@
     "/githubPagesAuditorV1/prod/anonymousSessions/{anonymousUid}/githubTokens/{tokenId}": {
        "schema": { "$ref": "#/entities/GitHubToken" },
        "description": "PAT storage for anonymous users, never read directly by clients"
+    },
+    "/githubPagesAuditorV1/prod/anonymousSessions/{anonymousUid}/settings/{settingId}": {
+       "schema": { "$ref": "#/entities/UserSetting" },
+       "description": "Guest specific app parameters and history"
     }
   }
 }
