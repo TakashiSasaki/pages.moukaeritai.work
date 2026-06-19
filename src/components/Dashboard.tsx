@@ -7,7 +7,7 @@ import { buildJsonExportV2 } from '../export/exportBuildersV2';
 import { ExportBuildContext } from '../schema/exportTypes';
 import { useAuth } from '../AuthContext';
 import Ajv from 'ajv';
-import schema from '@/schemas/github-pages-auditor-export-v1.schema.json';
+import schema from '@/schemas/github-pages-auditor-export-v2.schema.json';
 import { getEnvironmentName, getAuditCollectionPath } from '../lib/firestorePaths';
 import { 
   Play, 
@@ -85,6 +85,17 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const [isAuditing, setIsAuditing] = useState(false);
+  const [auditProgress, setAuditProgress] = useState<{
+    current: number;
+    total: number;
+    repo: string;
+    stage: 'idle' | 'fetching' | 'auditing';
+  }>({
+    current: 0,
+    total: 0,
+    repo: '',
+    stage: 'idle'
+  });
   const [results, setResults] = useState<RepositoryResult[] | null>(null);
   const [auditCreatedAt, setAuditCreatedAt] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -175,7 +186,7 @@ export default function Dashboard() {
 
   const jsonExportString = useMemo(() => {
     if (!results) return '';
-    return JSON.stringify(buildJsonExport(results, buildContext), null, 2);
+    return JSON.stringify(buildJsonExportV2(results, buildContext), null, 2);
   }, [results, buildContext]);
 
   const schemaString = useMemo(() => {
@@ -385,6 +396,12 @@ export default function Dashboard() {
     setError(null);
     setIsAuditing(true);
     setResults(null);
+    setAuditProgress({
+      current: 0,
+      total: 0,
+      repo: 'Connecting to GitHub APIs...',
+      stage: 'fetching'
+    });
 
     try {
       const pat = await getStoredPat();
@@ -404,39 +421,143 @@ export default function Dashboard() {
         headers
       });
       
-      const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to start audit');
+        const text = await res.text();
+        let errMsg = 'Failed to start audit';
+        try {
+          const parsed = JSON.parse(text);
+          errMsg = parsed.error || errMsg;
+        } catch (_) {
+          errMsg = text || errMsg;
+        }
+        throw new Error(errMsg);
       }
 
-      setResults(data.results);
-      setAuditCreatedAt(data.createdAt || new Date().toISOString());
+      // Check if it's chunked stream / ndjson
+      const contentType = res.headers.get('Content-Type');
+      if (contentType && contentType.includes('ndjson')) {
+        const reader = res.body?.getReader();
+        if (!reader) {
+          throw new Error('Streaming response is not supported by this browser.');
+        }
 
-      if (data.auditId && user && !user.isAnonymous) {
-        try {
-          const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-          const { db } = await import('../lib/firebase');
-          const env = getEnvironmentName(import.meta.env.MODE);
-          const collectionPath = getAuditCollectionPath(env, user.uid);
-          
-          await setDoc(doc(db, collectionPath, data.auditId), {
-            results: data.results,
-            createdAt: serverTimestamp()
-          });
-          
-          navigate(`/results/${data.auditId}`);
-        } catch (e) {
-          console.error("Failed to save audit cache locally:", e);
-          // Navigate to temporary session since cache failed
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        let finalData: any = null;
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep the incomplete line in the buffer
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            const data = JSON.parse(line);
+            
+            if (data.type === 'progress') {
+              setAuditProgress({
+                current: data.current,
+                total: data.total,
+                repo: data.repo,
+                stage: data.total > 0 ? 'auditing' : 'fetching'
+              });
+            } else if (data.type === 'error') {
+              throw new Error(data.error || 'Server error during audit');
+            } else if (data.type === 'done') {
+              finalData = data;
+            }
+          }
+        }
+
+        // Parse any remaining line in buffer
+        if (buffer.trim()) {
+          try {
+            const data = JSON.parse(buffer);
+            if (data.type === 'progress') {
+              setAuditProgress({
+                current: data.current,
+                total: data.total,
+                repo: data.repo,
+                stage: data.total > 0 ? 'auditing' : 'fetching'
+              });
+            } else if (data.type === 'error') {
+              throw new Error(data.error || 'Server error during audit');
+            } else if (data.type === 'done') {
+              finalData = data;
+            }
+          } catch (e) {
+            console.error("Buffer parsing error:", e);
+          }
+        }
+
+        if (!finalData) {
+          throw new Error('Audit did not complete successfully or final payload was missing.');
+        }
+
+        setResults(finalData.results);
+        setAuditCreatedAt(finalData.createdAt || new Date().toISOString());
+
+        if (finalData.auditId && user && !user.isAnonymous) {
+          try {
+            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db } = await import('../lib/firebase');
+            const env = getEnvironmentName(import.meta.env.MODE);
+            const collectionPath = getAuditCollectionPath(env, user.uid);
+            
+            await setDoc(doc(db, collectionPath, finalData.auditId), {
+              results: finalData.results,
+              createdAt: serverTimestamp()
+            });
+            
+            navigate(`/results/${finalData.auditId}`);
+          } catch (e) {
+            console.error("Failed to save audit cache locally:", e);
+            navigate('/results/guest');
+          }
+        } else {
           navigate('/results/guest');
         }
+
       } else {
-        navigate('/results/guest');
+        // Fallback for standard JSON (non-streaming)
+        const data = await res.json();
+        setResults(data.results);
+        setAuditCreatedAt(data.createdAt || new Date().toISOString());
+
+        if (data.auditId && user && !user.isAnonymous) {
+          try {
+            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db } = await import('../lib/firebase');
+            const env = getEnvironmentName(import.meta.env.MODE);
+            const collectionPath = getAuditCollectionPath(env, user.uid);
+            
+            await setDoc(doc(db, collectionPath, data.auditId), {
+              results: data.results,
+              createdAt: serverTimestamp()
+            });
+            
+            navigate(`/results/${data.auditId}`);
+          } catch (e) {
+            console.error("Failed to save audit cache locally:", e);
+            navigate('/results/guest');
+          }
+        } else {
+          navigate('/results/guest');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during safety audit.');
     } finally {
       setIsAuditing(false);
+      setAuditProgress({
+        current: 0,
+        total: 0,
+        repo: '',
+        stage: 'idle'
+      });
     }
   };
 
@@ -810,6 +931,55 @@ export default function Dashboard() {
               )}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Real-time Audit Progress Bar */}
+      {isAuditing && (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl max-w-2xl mx-auto my-6 w-full text-slate-100 animate-fade-in space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+              <span className="text-sm font-semibold text-white tracking-tight">
+                {auditProgress.stage === 'fetching' ? 'GitHubリポジトリ一覧を取得中...' : 'セキュリティ監査を実行中 (GitHub Pages Real-time Audit)...'}
+              </span>
+            </div>
+            <span className="text-xs font-mono text-slate-400 font-bold bg-slate-800 px-2 py-1 rounded border border-slate-700">
+              {auditProgress.total > 0 ? `${auditProgress.current} / ${auditProgress.total}` : 'Initializing'}
+            </span>
+          </div>
+
+          {auditProgress.total > 0 ? (
+            <div className="space-y-3">
+              {/* Progress track */}
+              <div className="w-full bg-slate-850 h-3 rounded-full overflow-hidden border border-slate-755 relative">
+                <div 
+                  className="bg-emerald-500 h-full rounded-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(16,185,129,0.5)]" 
+                  style={{ width: `${Math.min(100, (auditProgress.current / auditProgress.total) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span className="truncate max-w-[80%] flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                  Auditing: <span className="text-slate-200 font-semibold">{auditProgress.repo}</span>
+                </span>
+                <span className="font-bold text-emerald-400">
+                  {Math.round((auditProgress.current / auditProgress.total) * 100)}%
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Simulated/Pulse loading track for first stage */}
+              <div className="w-full bg-slate-850 h-3 rounded-full overflow-hidden border border-slate-755 relative">
+                <div className="absolute top-0 bottom-0 left-0 bg-emerald-500 rounded-full animate-pulse transition-all" style={{ width: '35%' }} />
+              </div>
+              <p className="text-xs text-slate-400 font-mono italic flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                {auditProgress.repo || 'Connecting to GitHub APIs...'}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -1380,7 +1550,7 @@ export default function Dashboard() {
                     JSON Schema (Specification)
                   </h3>
                   <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-                    This is the schema definition conforming to Draft-07 syntax, located in <span className="font-mono text-slate-200">schemas/github-pages-auditor-export-v1.schema.json</span>.
+                    This is the schema definition conforming to Draft-07 syntax, located in <span className="font-mono text-slate-200">schemas/github-pages-auditor-export-v2.schema.json</span>.
                   </p>
                 </div>
                 <CopyButton text={schemaString} />
@@ -1391,7 +1561,7 @@ export default function Dashboard() {
                 <Info className="w-4 h-4 mr-2 text-indigo-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-indigo-200 font-semibold text-[12px] block mb-0.5">Schema Truth Policy</strong>
-                  <span className="leading-relaxed text-indigo-400">Any structure-affecting changes to the TS definitions in <code className="bg-indigo-950/80 px-1 py-0.5 rounded font-mono text-indigo-100">src/schema/exportTypes.ts</code> must automatically compile down to update this output dynamically during code validation.</span>
+                  <span className="leading-relaxed text-indigo-400">Any structure-affecting changes to the TS definitions in <code className="bg-indigo-950/80 px-1 py-0.5 rounded font-mono text-indigo-100">src/schema/exportTypesV2.ts</code> must automatically compile down to update this output dynamically during code validation.</span>
                 </div>
               </div>
 

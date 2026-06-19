@@ -2,7 +2,14 @@
 
 This document designs and drafts the **Version 2 (v2)** data interchange schema, registered under `github-pages-auditor.export.v2`. 
 
-While the **V1** schema utilizes a flat, single-level dictionary optimised for CSV grids, the **V2** design leverages deeply nested, domain-focused JSON sub-objects to achieve structural clarity and clean machine readability.
+While the **V1** schema (current default) utilizes a flat, single-level dictionary optimised for CSV grids, the **V2** design (draft/interchange candidate) leverages deeply nested, domain-focused JSON sub-objects to achieve structural clarity and clean machine readability.
+
+### Samples and Tooling
+External consumer tools and developers can evaluate V2 payloads by inspecting:
+- `examples/github-pages-auditor-export-v2.sample.json`
+- The definition schema located at `schemas/github-pages-auditor-export-v2.schema.json`
+
+For referencing the stable `$id` and schema version, a local schema manifest is maintained in `schemas/schema-identifiers.json`. Please note that the identifier takes the form of a stable URN (`urn:uuid:...`), but remote schema lookups or registry resolution are out of scope. Validation should be performed locally using the files provided.
 
 ---
 

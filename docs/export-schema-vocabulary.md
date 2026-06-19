@@ -2,6 +2,9 @@
 
 This volume provides a rigorous, property-by-property dictionary of the application's V1 JSON export schema. It defines the origin, semantics, and recommended standard V2 naming maps for all keys to ensure high-fidelity data interchange across auditing pipelines.
 
+V1 is the current default schema optimized for both flat tabular JSON rendering and CSV generation. External consumers can find sample payloads for evaluation under `examples/github-pages-auditor-export-v1.sample.json` and its corresponding CSV generation in the same folder.
+
+
 ---
 
 ## Part 1: Architecture Intent & Sources Breakdown

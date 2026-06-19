@@ -813,7 +813,7 @@ describe('External Consumer Sample File Validation Check', () => {
     // 6. Assert secret minimization holds for both JSON sample files
     const v1Text = JSON.stringify(v1Sample);
     const v2Text = JSON.stringify(v2Sample);
-    const csvContent = fs.readFileSync(path.join(process.cwd(), 'examples/github-pages-auditor-export.sample.csv'), 'utf-8');
+    const csvContent = fs.readFileSync(path.join(process.cwd(), 'examples/github-pages-auditor-export-v1.sample.csv'), 'utf-8');
 
     const secretShieldPatterns = [
       'ghp_', 'github_pat_', 'Bearer', 'githubPagesAuditorV1', 'users/', 'anonymousSessions/'

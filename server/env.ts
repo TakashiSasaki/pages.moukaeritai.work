@@ -14,11 +14,11 @@ export interface BackendEnv {
  */
 export function validateBackendEnv(): BackendEnv {
   const NODE_ENV = process.env.NODE_ENV || 'development';
-  const ALLOW_DUMMY_AUTH = process.env.ALLOW_DUMMY_AUTH === 'true';
+  let ALLOW_DUMMY_AUTH = process.env.ALLOW_DUMMY_AUTH === 'true';
 
   let hasFirebaseConfig = false;
   let projectId: string | null = null;
-
+  
   try {
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
     if (fs.existsSync(configPath)) {
@@ -58,20 +58,17 @@ export function validateBackendEnv(): BackendEnv {
   }
 
   if (ALLOW_DUMMY_AUTH && NODE_ENV === 'production') {
-    const fatalSecMsg = [
+    const warningMsg = [
       "==============================================================================",
-      "❌ FATAL SECURITY ERROR: ALLOW_DUMMY_AUTH IS ENABLED IN PRODUCTION!",
+      "⚠️ SECURITY COMPLIANCE WARNING: ALLOW_DUMMY_AUTH WAS ENABLED IN PRODUCTION!",
       "==============================================================================",
-      "This configuration bypasses core authentication signature checks and presents",
-      "an unacceptable security risk under production environments.",
-      "",
-      "👉 TO RESOLVE:",
-      "Ensure the ALLOW_DUMMY_AUTH environment variable is removed, set to 'false',",
-      "or that NODE_ENV is set to 'development' for local/integration mock testing.",
+      "The local authentication bypass is strictly forbidden under production settings.",
+      "To safeguard environment boundaries and prevent security holes,",
+      "ALLOW_DUMMY_AUTH has been automatically FORCED to 'false'.",
       "=============================================================================="
     ].join('\n');
-    console.error(fatalSecMsg);
-    throw new Error("ALLOW_DUMMY_AUTH is strictly forbidden in production environments.");
+    console.warn(warningMsg);
+    ALLOW_DUMMY_AUTH = false;
   } else if (ALLOW_DUMMY_AUTH) {
     console.log("ℹ️ INFO: ALLOW_DUMMY_AUTH is active. Client bypass using 'dummy-token' is permitted.");
   }

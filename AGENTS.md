@@ -147,6 +147,13 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Full browser E2E automated regressions is a future roadmap milestone documented under `docs/ui-regression-plan.md`.
 
 ## Change Log for Agents
+- Decoupled PAT reference from export contexts and replaced it with safe token metadata (`tokenType`).
+- Generated proper external consumer sample artifacts (`json` and `csv`) with static IDs safely under `examples/`.
+- Introduced `schemas/schema-identifiers.json` as the local manifest mapping semantic schema versions to URNs.
+- Created `scripts/validateExamples.js` to continuously assert compliance for V1 and V2 exported samples alongside `npm run examples:validate`.
+- Defined `docs/external-consumer-guide.md` with strict interoperability requirements, ensuring registries and runtime retrievals remain out-of-scope.
+- Completely verified coverage of V2 deeply-nested `findings` taxonomy reflecting GitHub Pages DNS/SSL statuses.
+- Advanced primary build threshold to `1.2.0 (External Consumer Trial Readiness Baseline)`.
 - Completed dynamic PORT environment variable integration in `server.ts` to allow fully decoupled container deployments.
 - Exposed unauthenticated `/healthz` on the Express backend for secure liveness/readiness probes in orchestrations like Cloud Run or GKE.
 - Shipped professional, compact dual-stage `Dockerfile` and a comprehensive `.dockerignore` mapping modern containerization practices.

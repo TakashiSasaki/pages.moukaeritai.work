@@ -102,25 +102,39 @@ app.post('/api/audit/run', verifyAuth, async (req, res) => {
   const pat = req.headers['x-temp-pat'];
   if (!pat || typeof pat !== 'string') return res.status(400).json({ error: 'No GitHub PAT provided' });
 
+  // Set headers for NDJSON streaming immediately to enable chunked transfer
+  res.setHeader('Content-Type', 'application/x-ndjson');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
   try {
-    // 1. Fetch repositories with pagination
+    // Stage 1: Fetching repositories
+    res.write(JSON.stringify({ type: 'progress', current: 0, total: 0, repo: 'Connecting to GitHub and initializing...' }) + '\n');
+
     let repos: any[] = [];
     let page = 1;
     let hasNextPage = true;
 
     while (hasNextPage) {
+      res.write(JSON.stringify({ type: 'progress', current: 0, total: 0, repo: `Retrieving repository metadata (page ${page})...` }) + '\n');
+      
       const reposResponse = await githubApi('/user/repos', pat as string, { page, per_page: 100, visibility: 'all', affiliation: 'owner,collaborator,organization_member' });
       
       const rateLimitError = checkRateLimit(reposResponse);
       if (rateLimitError) {
-        return res.status(429).json({ error: rateLimitError, details: 'Rate limited while fetching repositories.' });
+        res.write(JSON.stringify({ type: 'error', error: rateLimitError, details: 'Rate limited while fetching repositories.' }) + '\n');
+        res.end();
+        return;
       }
 
       if (!reposResponse.ok) {
-        return res.status(reposResponse.status).json({ 
+        res.write(JSON.stringify({ 
+          type: 'error',
           error: classifyError(reposResponse.status, false, true, false), 
           details: await reposResponse.text() 
-        });
+        }) + '\n');
+        res.end();
+        return;
       }
       
       const pageRepos = await reposResponse.json();
@@ -136,9 +150,15 @@ app.post('/api/audit/run', verifyAuth, async (req, res) => {
     }
 
     const results = [];
+    const total = repos.length;
 
-    // 2. Audit each repo
-    for (const repo of repos) {
+    // Stage 2: Audit repositories
+    for (let i = 0; i < total; i++) {
+      const repo = repos[i];
+      
+      // Update client-side progress bar
+      res.write(JSON.stringify({ type: 'progress', current: i + 1, total, repo: repo.full_name }) + '\n');
+
       const repoResult: any = {
         id: repo.id,
         ownerName: repo.owner.login,
@@ -235,9 +255,15 @@ app.post('/api/audit/run', verifyAuth, async (req, res) => {
 
     const auditId = 'aud_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
 
-    res.json({ results, auditId, createdAt: new Date().toISOString() });
+    res.write(JSON.stringify({ type: 'done', results, auditId, createdAt: new Date().toISOString() }) + '\n');
+    res.end();
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    } else {
+      res.write(JSON.stringify({ type: 'error', error: error.message }) + '\n');
+      res.end();
+    }
   }
 });
 

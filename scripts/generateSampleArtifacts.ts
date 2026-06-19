@@ -39,7 +39,7 @@ async function generate() {
   // 3. Generate CSV
   const csvData = buildCsvExport(liveExportSampleRows, context);
   fs.writeFileSync(
-    path.join(examplesDir, 'github-pages-auditor-export.sample.csv'),
+    path.join(examplesDir, 'github-pages-auditor-export-v1.sample.csv'),
     csvData,
     'utf-8'
   );

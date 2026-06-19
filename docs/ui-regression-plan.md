@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - UI Regression Test Plan
-Version: `1.1.0` (Pre-Production Validation Baseline)
+Version: `1.2.0` (External Consumer Trial Readiness Baseline)
 
 This document contains the requirements and test matrix for the **frontend user interface regression testing**. Since deploying heavier testing frameworks (such as Playwright, Cypress, or Puppeteer) inside sandboxed containerized workspaces introduces runtime execution risks, this plan outlines the exact manual validation and future E2E automation matrix.
 
