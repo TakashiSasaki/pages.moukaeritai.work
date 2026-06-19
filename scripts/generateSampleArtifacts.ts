@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { liveExportSampleRows } from '../tests/fixtures/liveExportRows';
-import { buildJsonExport, buildCsvExport } from '../src/export/exportBuilders';
+import { buildCsvExport } from '../src/export/csvExport';
 import { buildJsonExportV2 } from '../src/export/exportBuildersV2';
 
 async function generate() {
@@ -20,15 +20,7 @@ async function generate() {
     appEnvironment: 'production'
   };
 
-  // 1. Generate V1 JSON
-  const v1Json = buildJsonExport(liveExportSampleRows, context);
-  fs.writeFileSync(
-    path.join(examplesDir, 'github-pages-auditor-export-v1.sample.json'),
-    JSON.stringify(v1Json, null, 2),
-    'utf-8'
-  );
-
-  // 2. Generate V2 JSON
+  // 1. Generate V2 JSON
   const v2Json = buildJsonExportV2(liveExportSampleRows, context);
   fs.writeFileSync(
     path.join(examplesDir, 'github-pages-auditor-export-v2.sample.json'),
@@ -36,10 +28,10 @@ async function generate() {
     'utf-8'
   );
 
-  // 3. Generate CSV
+  // 2. Generate CSV
   const csvData = buildCsvExport(liveExportSampleRows, context);
   fs.writeFileSync(
-    path.join(examplesDir, 'github-pages-auditor-export-v1.sample.csv'),
+    path.join(examplesDir, 'github-pages-auditor-export.sample.csv'),
     csvData,
     'utf-8'
   );

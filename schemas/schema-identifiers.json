@@ -1,16 +1,10 @@
 {
   "schemas": [
     {
-      "schemaVersion": "github-pages-auditor.export.v1",
-      "schemaId": "urn:uuid:ef46fd93-424a-4e2a-8f5b-df97e28b2be1",
-      "path": "schemas/github-pages-auditor-export-v1.schema.json",
-      "status": "current"
-    },
-    {
       "schemaVersion": "github-pages-auditor.export.v2",
       "schemaId": "urn:uuid:7d0f98be-8cba-49c5-84dc-66914b5da3f2",
       "path": "schemas/github-pages-auditor-export-v2.schema.json",
-      "status": "draft"
+      "status": "current"
     }
   ],
   "resolver": "out_of_scope"

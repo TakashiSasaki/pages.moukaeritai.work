@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { RepositoryResult } from '../types';
-import { buildJsonExport, buildCsvExport } from '../export/exportBuilders';
+import { buildCsvExport } from '../export/csvExport';
 import { buildJsonExportV2 } from '../export/exportBuildersV2';
-import { ExportBuildContext } from '../schema/exportTypes';
+import { ExportBuildContext } from '../export/exportContext';
 import { useAuth } from '../AuthContext';
 import Ajv from 'ajv';
 import schema from '@/schemas/github-pages-auditor-export-v2.schema.json';
@@ -581,27 +581,13 @@ export default function Dashboard() {
   const exportJson = () => {
     if (!results) return;
     
-    const exportData = buildJsonExport(results, buildContext);
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = getExportFilename('json');
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const exportJsonV2 = () => {
-    if (!results) return;
-    
     const exportData = buildJsonExportV2(results, buildContext);
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = getExportFilename('json').replace('.json', '_v2_draft.json');
+    a.download = getExportFilename('json');
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -624,7 +610,7 @@ export default function Dashboard() {
     setIsValidatingSchema(true);
     setTimeout(() => {
       try {
-        const exportData = buildJsonExport(results, buildContext);
+        const exportData = buildJsonExportV2(results, buildContext);
         const ajv = new Ajv({ strict: false });
         const validate = ajv.compile(schema);
         const valid = validate(exportData);
@@ -1204,14 +1190,6 @@ export default function Dashboard() {
                     <Download className="w-3.5 h-3.5 mr-2 text-slate-400" />
                     JSONをダウンロード
                   </button>
-                  <button 
-                    onClick={exportJsonV2} 
-                    className="flex-1 md:flex-initial px-4 py-2 bg-white text-slate-800 rounded-lg hover:bg-slate-50 flex items-center justify-center border border-slate-200 shadow-2xs text-xs font-semibold hover:border-slate-300 transition-colors cursor-pointer"
-                    title="ネストされたJSON v2 構造のインターチェンジドラフト版をダウンロード"
-                  >
-                    <Download className="w-3.5 h-3.5 mr-2 text-slate-400" />
-                    JSON V2 (Interchange Draft)
-                  </button>
                 </div>
               </div>
             </div>
@@ -1507,8 +1485,8 @@ export default function Dashboard() {
                   <div className="mb-4 p-3 bg-emerald-950/80 border border-emerald-800 text-emerald-300 rounded-lg flex items-start text-xs font-medium shadow-xs">
                     <CheckCircle className="w-4 h-4 mr-2 text-emerald-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <strong className="text-emerald-200 font-semibold text-[13px] block mb-0.5">Schema Validation Passed!</strong>
-                      <span className="leading-relaxed text-emerald-400">This audit run output conforms strictly to the specified JSON schema layout rules (github-pages-auditor.export.v1).</span>
+                                            <strong className="text-emerald-200 font-semibold text-[13px] block mb-0.5">Schema Validation Passed!</strong>
+                      <span className="leading-relaxed text-emerald-400">This audit run output conforms strictly to the specified JSON schema layout rules (github-pages-auditor.export.v2).</span>
                     </div>
                   </div>
                 ) : (

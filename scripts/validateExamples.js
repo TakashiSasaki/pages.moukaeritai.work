@@ -8,14 +8,7 @@ function run() {
   addFormats(ajv);
 
   for (const info of identifiers.schemas) {
-    if (info.schemaVersion === 'github-pages-auditor.export.v1') {
-      const schema = JSON.parse(fs.readFileSync(info.path, 'utf8'));
-      const sample = JSON.parse(fs.readFileSync('examples/github-pages-auditor-export-v1.sample.json', 'utf8'));
-      if (sample.schemaId !== info.schemaId) throw new Error('V1 schemaId mismatch');
-      if (sample.schemaVersion !== info.schemaVersion) throw new Error('V1 schemaVersion mismatch');
-      const validate = ajv.compile(schema);
-      if (!validate(sample)) throw new Error('V1 validation failed: ' + ajv.errorsText(validate.errors));
-    } else if (info.schemaVersion === 'github-pages-auditor.export.v2') {
+    if (info.schemaVersion === 'github-pages-auditor.export.v2') {
       const schema = JSON.parse(fs.readFileSync(info.path, 'utf8'));
       const sample = JSON.parse(fs.readFileSync('examples/github-pages-auditor-export-v2.sample.json', 'utf8'));
       if (sample.schemaId !== info.schemaId) throw new Error('V2 schemaId mismatch');
@@ -26,7 +19,7 @@ function run() {
   }
 
   const forbiddenPatterns = ['ghp_', 'github_pat_', 'Bearer', 'githubPagesAuditorV1', 'users/', 'anonymousSessions/', 'Authorization', 'firebase', 'refreshToken'];
-  const files = ['examples/github-pages-auditor-export-v1.sample.json', 'examples/github-pages-auditor-export-v2.sample.json', 'examples/github-pages-auditor-export-v1.sample.csv'];
+  const files = ['examples/github-pages-auditor-export-v2.sample.json', 'examples/github-pages-auditor-export.sample.csv'];
   
   for (const file of files) {
     const content = fs.readFileSync(file, 'utf8');

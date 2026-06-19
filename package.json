@@ -13,7 +13,7 @@
     "test": "NODE_ENV=test tsx --test tests/**/*.test.ts",
     "test:unit": "NODE_ENV=test tsx --test tests/comprehensive.test.ts",
     "test:rules": "NODE_ENV=test tsx --test tests/rules.test.ts",
-    "schema:generate": "ts-json-schema-generator --path src/schema/exportTypes.ts --type GitHubPagesAuditorExport --out schemas/github-pages-auditor-export-v1.schema.json && ts-json-schema-generator --path src/schema/exportTypesV2.ts --type GitHubPagesAuditorExportV2 --out schemas/github-pages-auditor-export-v2.schema.json && node scripts/applySchemaMetadata.js",
+    "schema:generate": "ts-json-schema-generator --path src/schema/exportTypesV2.ts --type GitHubPagesAuditorExportV2 --out schemas/github-pages-auditor-export-v2.schema.json && node scripts/applySchemaMetadata.js",
     "schema:check": "node scripts/schemaCheck.js",
     "examples:validate": "node scripts/validateExamples.js",
     "test:examples": "npm run examples:validate"
