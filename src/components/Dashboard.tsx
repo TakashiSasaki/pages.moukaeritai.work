@@ -125,18 +125,9 @@ export default function Dashboard() {
     return JSON.stringify(buildJsonExport(results, ""), null, 2);
   }, [results]);
 
-  const highlightedJsonElements = useMemo(() => {
-    if (!jsonExportString) return null;
-    return highlightJson(jsonExportString);
-  }, [jsonExportString]);
-
   const schemaString = useMemo(() => {
     return JSON.stringify(schema, null, 2);
   }, []);
-
-  const highlightedSchemaElements = useMemo(() => {
-    return highlightJson(schemaString);
-  }, [schemaString]);
 
   // Check for existing cached audit on load or after audits are finished
   useEffect(() => {
@@ -1272,12 +1263,8 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* High-density code preview */}
-              <div className="flex-1 overflow-auto bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 select-text max-h-[600px]">
-                <div className="space-y-0.5 select-text">
-                  {highlightedJsonElements}
-                </div>
-              </div>
+              {/* High-density code preview with virtualization to prevent blocking main thread */}
+              <VirtualizedCodeViewer code={jsonExportString} />
             </div>
           )}
 
@@ -1305,12 +1292,8 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* High-density code preview */}
-              <div className="flex-1 overflow-auto bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 select-text max-h-[600px]">
-                <div className="space-y-0.5 select-text">
-                  {highlightedSchemaElements}
-                </div>
-              </div>
+              {/* High-density code preview with virtualization to prevent blocking main thread */}
+              <VirtualizedCodeViewer code={schemaString} />
             </div>
           )}
         </div>
@@ -1420,6 +1403,289 @@ function CopyButton({ text }: { text: string }) {
         </>
       )}
     </button>
+  );
+}
+
+interface VirtualizedCodeViewerProps {
+  code: string;
+}
+
+export function VirtualizedCodeViewer({ code }: VirtualizedCodeViewerProps) {
+  const [highlightedLines, setHighlightedLines] = useState<string[]>([]);
+  const [isHighlighting, setIsHighlighting] = useState(true);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(550);
+  const currentJobId = React.useRef(0);
+  const workerRef = React.useRef<Worker | null>(null);
+
+  // Define inline worker script code
+  const workerCode = React.useMemo(() => `
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function processLine(line) {
+      const indentMatch = line.match(/^(\\s*)/);
+      const indent = indentMatch ? indentMatch[1] : '';
+      let remaining = line.substring(indent.length);
+      
+      let html = escapeHtml(indent);
+      
+      const keyMatch = remaining.match(/^("[^"]+")\\s*:/);
+      if (keyMatch) {
+        html += '<span class="text-purple-405 font-semibold">' + escapeHtml(keyMatch[1]) + '</span>';
+        html += '<span class="text-slate-405">:</span>';
+        remaining = remaining.substring(keyMatch[0].length);
+      }
+      
+      while (remaining.length > 0) {
+        const stringValueMatch = remaining.match(/^(\\s*"[^"]*")([, ]*)/);
+        const numberValueMatch = remaining.match(/^(\\s*[0-9.-]+)([, ]*)/);
+        const boolValueMatch = remaining.match(/^(\\s*(true|false))([, ]*)/);
+        const nullValueMatch = remaining.match(/^(\\s*null)([, ]*)/);
+        const bracketMatch = remaining.match(/^(\\s*[{}[\\]]+)([, ]*)/);
+        
+        if (stringValueMatch) {
+          html += '<span class="text-emerald-405 font-medium">' + escapeHtml(stringValueMatch[1]) + '</span>';
+          if (stringValueMatch[2]) {
+            html += '<span class="text-slate-500">' + escapeHtml(stringValueMatch[2]) + '</span>';
+          }
+          remaining = remaining.substring(stringValueMatch[0].length);
+        } else if (numberValueMatch) {
+          html += '<span class="text-amber-500 font-mono">' + escapeHtml(numberValueMatch[1]) + '</span>';
+          if (numberValueMatch[2]) {
+            html += '<span class="text-slate-500">' + escapeHtml(numberValueMatch[2]) + '</span>';
+          }
+          remaining = remaining.substring(numberValueMatch[0].length);
+        } else if (boolValueMatch) {
+          html += '<span class="text-blue-400 font-semibold">' + escapeHtml(boolValueMatch[1]) + '</span>';
+          if (boolValueMatch[2]) {
+            html += '<span class="text-slate-500">' + escapeHtml(boolValueMatch[2]) + '</span>';
+          }
+          remaining = remaining.substring(boolValueMatch[0].length);
+        } else if (nullValueMatch) {
+          html += '<span class="text-rose-400 italic">' + escapeHtml(nullValueMatch[1]) + '</span>';
+          if (nullValueMatch[2]) {
+            html += '<span class="text-slate-500">' + escapeHtml(nullValueMatch[2]) + '</span>';
+          }
+          remaining = remaining.substring(nullValueMatch[0].length);
+        } else if (bracketMatch) {
+          html += '<span class="text-slate-400 font-medium">' + escapeHtml(bracketMatch[1]) + '</span>';
+          if (bracketMatch[2]) {
+            html += '<span class="text-slate-500">' + escapeHtml(bracketMatch[2]) + '</span>';
+          }
+          remaining = remaining.substring(bracketMatch[0].length);
+        } else {
+          html += '<span class="text-slate-300">' + escapeHtml(remaining) + '</span>';
+          break;
+        }
+      }
+      return html;
+    }
+
+    self.onmessage = function(e) {
+      const { code, id } = e.data;
+      if (typeof code !== 'string') return;
+      
+      const lines = code.split('\\n');
+      const highlighted = [];
+      
+      for (let i = 0; i < lines.length; i++) {
+        highlighted.push(processLine(lines[i]));
+      }
+      
+      self.postMessage({ lines: highlighted, id: id });
+    };
+  `, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Worker) {
+      try {
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        const worker = new Worker(URL.createObjectURL(blob));
+        workerRef.current = worker;
+
+        worker.onmessage = (e) => {
+          const { lines, id } = e.data;
+          if (id === currentJobId.current) {
+            setHighlightedLines(lines);
+            setIsHighlighting(false);
+          }
+        };
+
+        return () => {
+          worker.terminate();
+        };
+      } catch (err) {
+        console.error('Failed to initialize inline Web Worker:', err);
+      }
+    }
+  }, [workerCode]);
+
+  useEffect(() => {
+    setIsHighlighting(true);
+    const jobId = ++currentJobId.current;
+
+    if (workerRef.current) {
+      workerRef.current.postMessage({ code, id: jobId });
+    } else {
+      // Fallback if browser/context does not support Web Worker
+      setTimeout(() => {
+        if (jobId !== currentJobId.current) return;
+        const lines = code.split('\n');
+        const highlighted = lines.map(line => {
+          const indentMatch = line.match(/^(\s*)/);
+          const indent = indentMatch ? indentMatch[1] : '';
+          let remaining = line.substring(indent.length);
+          
+          let html = escapeHtml(indent);
+          
+          const keyMatch = remaining.match(/^("[^"]+")\s*:/);
+          if (keyMatch) {
+             html += `<span class="text-purple-405 font-semibold">${escapeHtml(keyMatch[1])}</span>`;
+             html += `<span class="text-slate-405">:</span>`;
+             remaining = remaining.substring(keyMatch[0].length);
+          }
+          
+          while (remaining.length > 0) {
+            const stringValueMatch = remaining.match(/^(\s*"[^"]*")([, ]*)/);
+            const numberValueMatch = remaining.match(/^(\s*[0-9.-]+)([, ]*)/);
+            const boolValueMatch = remaining.match(/^(\s*(true|false))([, ]*)/);
+            const nullValueMatch = remaining.match(/^(\s*null)([, ]*)/);
+            const bracketMatch = remaining.match(/^(\s*[{}\[\]]+)([, ]*)/);
+            
+            if (stringValueMatch) {
+              html += `<span class="text-emerald-405 font-medium">${escapeHtml(stringValueMatch[1])}</span>`;
+              if (stringValueMatch[2]) {
+                html += `<span class="text-slate-500">${escapeHtml(stringValueMatch[2])}</span>`;
+              }
+              remaining = remaining.substring(stringValueMatch[0].length);
+            } else if (numberValueMatch) {
+              html += `<span class="text-amber-500 font-mono">${escapeHtml(numberValueMatch[1])}</span>`;
+              if (numberValueMatch[2]) {
+                html += `<span class="text-slate-500">${escapeHtml(numberValueMatch[2])}</span>`;
+              }
+              remaining = remaining.substring(numberValueMatch[0].length);
+            } else if (boolValueMatch) {
+              html += `<span class="text-blue-400 font-semibold">${escapeHtml(boolValueMatch[1])}</span>`;
+              if (boolValueMatch[2]) {
+                html += `<span class="text-slate-500">${escapeHtml(boolValueMatch[2])}</span>`;
+              }
+              remaining = remaining.substring(boolValueMatch[0].length);
+            } else if (nullValueMatch) {
+              html += `<span class="text-rose-400 italic">${escapeHtml(nullValueMatch[1])}</span>`;
+              if (nullValueMatch[2]) {
+                html += `<span class="text-slate-500">${escapeHtml(nullValueMatch[2])}</span>`;
+              }
+              remaining = remaining.substring(nullValueMatch[0].length);
+            } else if (bracketMatch) {
+              html += `<span class="text-slate-400 font-medium">${escapeHtml(bracketMatch[1])}</span>`;
+              if (bracketMatch[2]) {
+                html += `<span class="text-slate-500">${escapeHtml(bracketMatch[2])}</span>`;
+              }
+              remaining = remaining.substring(bracketMatch[0].length);
+            } else {
+              html += `<span class="text-slate-300">${escapeHtml(remaining)}</span>`;
+              break;
+            }
+          }
+          return html;
+        });
+
+        setHighlightedLines(highlighted);
+        setIsHighlighting(false);
+      }, 50);
+    }
+  }, [code]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    setContainerHeight(el.clientHeight || 550);
+
+    const handleScroll = () => {
+      setScrollTop(el.scrollTop);
+    };
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.height) {
+          setContainerHeight(entry.contentRect.height);
+        }
+      }
+    });
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    resizeObserver.observe(el);
+
+    return () => {
+      el.removeEventListener('scroll', handleScroll);
+      resizeObserver.disconnect();
+    };
+  }, [highlightedLines]);
+
+  const rowHeight = 22;
+  const totalHeight = highlightedLines.length * rowHeight;
+
+  const visibleIndices = useMemo(() => {
+    const start = Math.max(0, Math.floor(scrollTop / rowHeight) - 8);
+    const end = Math.min(highlightedLines.length - 1, Math.ceil((scrollTop + containerHeight) / rowHeight) + 8);
+    return { start, end };
+  }, [scrollTop, containerHeight, highlightedLines.length]);
+
+  const renderedLines = useMemo(() => {
+    const elements: React.ReactNode[] = [];
+    const { start, end } = visibleIndices;
+
+    for (let i = start; i <= end; i++) {
+      const html = highlightedLines[i];
+      if (html === undefined) continue;
+
+      elements.push(
+        <div 
+          key={i} 
+          className="absolute left-0 right-0 flex min-h-[22px] leading-normal font-mono hover:bg-slate-800/50 transition-colors select-text" 
+          style={{ top: `${i * rowHeight}px`, height: `${rowHeight}px` }}
+        >
+          <span className="w-12 select-none text-right pr-4 text-slate-500 font-mono text-[10px] border-r border-slate-800 mr-4 shrink-0">
+            {i + 1}
+          </span>
+          <span className="select-all whitespace-pre pr-4 overflow-hidden text-ellipsis" dangerouslySetInnerHTML={{ __html: html }} />
+        </div>
+      );
+    }
+
+    return elements;
+  }, [visibleIndices, highlightedLines]);
+
+  return (
+    <div 
+      ref={containerRef}
+      className="flex-1 overflow-auto bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 select-text relative"
+      style={{ height: '550px', maxHeight: '550px' }}
+    >
+      {isHighlighting ? (
+        <div className="flex flex-col items-center justify-center h-full space-y-3 text-slate-400">
+          <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-[11px] font-medium tracking-wide">highlighting code in background thread...</span>
+        </div>
+      ) : (
+        <div className="relative select-text" style={{ height: `${totalHeight}px`, minWidth: '100%' }}>
+          {renderedLines}
+        </div>
+      )}
+    </div>
   );
 }
 
