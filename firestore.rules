@@ -2,25 +2,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /githubPagesAuditorV1/{environment}/users/{uid} {
-      allow read, write: if false; // Only accessible via backend
-      
-      match /githubTokens/{tokenId} {
-        allow read, write: if false; // CRITICAL: NEVER EXPOSE TO CLIENT
-      }
-    }
-    
-    match /githubPagesAuditorV1/{environment}/anonymousSessions/{anonymousUid} {
-      allow read, write: if false; // Only accessible via backend
-      
-      match /githubTokens/{tokenId} {
-        allow read, write: if false; // CRITICAL: NEVER EXPOSE TO CLIENT
-      }
-    }
-    
-    // Default deny
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if false; // Only accessible via backend
     }
   }
 }

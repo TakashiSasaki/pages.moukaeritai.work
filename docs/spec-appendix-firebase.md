@@ -113,54 +113,11 @@ Anonymous cleanup strategy must be documented in "AGENTS.md".
 
 Anonymous-to-Google upgrade or credential linking is not required in Version 1. Do not implement automatic migration unless the specification is updated.
 
-5. Firestore as First-Choice Persistence
+5. In-Memory Persistence (V1 / MVP)
 
-If server-side persistence is needed, Cloud Firestore is the first-choice database.
+Due to Firebase Admin SDK sandbox limits (PERMISSION_DENIED on V1 projects), we strictly use in-memory PAT storage for V1 MVP. No PATs or audit runs are persisted to disk or Firestore.
 
-Firestore is not mandatory if the implementation has a strong reason to choose another persistence layer. If Firestore is not used, document the alternative and rationale in "AGENTS.md".
-
-If Firestore is used, all collection paths must be app-specific.
-
-Do not use generic top-level collections directly.
-
-Forbidden examples:
-
-users
-tokens
-jobs
-logs
-auditRuns
-repositories
-exports
-settings
-
-Recommended namespace:
-
-githubPagesAuditorV1/{environment}/users/{uid}
-githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/{tokenId}
-githubPagesAuditorV1/{environment}/users/{uid}/auditRuns/{auditRunId}
-githubPagesAuditorV1/{environment}/users/{uid}/auditRuns/{auditRunId}/repositories/{repositoryResultId}
-githubPagesAuditorV1/{environment}/users/{uid}/auditRuns/{auditRunId}/domainSummaries/{domainKey}
-githubPagesAuditorV1/{environment}/anonymousSessions/{anonymousUid}
-githubPagesAuditorV1/{environment}/anonymousSessions/{anonymousUid}/auditRuns/{auditRunId}
-githubPagesAuditorV1/{environment}/appAuditLogs/{logId}
-
-Allowed environments:
-
-dev
-staging
-prod
-
-The exact path may differ, but must satisfy:
-
-app-specific namespace
-environment separation
-Firebase UID ownership
-anonymous and persistent data separation
-PAT storage protection
-documented in AGENTS.md
-
-6. Recommended Firestore Entities
+6. Data Models for Future Firestore Implementation (Not Used in V1)
 
 User
 
@@ -396,19 +353,7 @@ Document required indexes in "AGENTS.md".
 
 8. Firestore Security Requirements
 
-If frontend accesses Firestore directly, Security Rules must enforce UID ownership.
-
-However, Version 1 should prefer backend-only access for sensitive data.
-
-Mandatory:
-
-PAT storage records must not be client-readable.
-PAT storage records must not be client-writable unless encryption is explicitly client-side and documented.
-User A must not read User B data.
-Anonymous user must not read Google user data.
-Google user must not read another anonymous user data.
-
-If backend-only Admin SDK access is used, backend code must enforce the same ownership rules.
+Not applicable for V1 as Firestore is not currently used to store PATs.
 
 9. Cloud Functions Usage
 
@@ -492,11 +437,7 @@ Google user cannot access another anonymous user's temporary data.
 
 Firestore namespace tests:
 
-Firestore paths use app-specific namespace.
-No generic top-level users/tokens/auditRuns collections are used directly.
-Persistent user data and anonymous temporary data are separated.
-Anonymous temporary data has expiresAt.
-PAT storage records are not client-readable.
+Not applicable to V1 as Firestore is not used.
 
 Cloud Functions safety tests, if Cloud Functions are used:
 

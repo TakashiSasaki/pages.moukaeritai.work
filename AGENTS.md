@@ -35,8 +35,9 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Backend APIs require `Authorization: Bearer <firebase-id-token>`.
 
 ## Firestore Persistence Contract
-- Firestore used: Not used (Current MVP uses strictly in-memory storage).
-- Rationale: We are in the MVP phase building a safe foundation. Cloud Firestore backend access via `firebase-admin` natively returns `PERMISSION_DENIED` in the sandbox environment, meaning we strictly rely on in-memory mapping to keep PATs secure and offline. Server-side static encryption is unnecessary as nothing is persisted to the file system.
+- Firestore used: Yes. (Migrated from in-memory).
+- PATs are securely stored in `/githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default`.
+- Security Rules: Client access strictly denied (`allow read, write: if false`). Only accessible via backend Firebase Admin SDK.
 
 ## Cloud Functions Deployment Contract
 - Cloud Functions used: Not used.
@@ -44,6 +45,12 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Do not run bare `firebase deploy --only functions` for this app.
 - Cloud Functions prefix (if used later): `gpaV1`
 - Cloud Functions deploy command (if used later): `firebase deploy --only functions:gpaV1Api`
+
+## Version Management
+- Versioning is strictly managed via the standard `package.json` `"version"` field.
+- The version string (e.g. `1.0.0`) is exported dynamically in the project build pipeline via Vite plugin definitions (`__APP_VERSION__` mapping).
+- Before each major baseline or feature completion, the package version should be explicitly bumped.
+- UI elements (like headers, footers) read the current version dynamically rather than hardcoding it.
 
 ## GitHub API Usage Contract
 - Allowed endpoints:
@@ -60,7 +67,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Rate Limit Handling is fully integrated, evaluating headers (`x-ratelimit-remaining`, `retry-after`) and interrupting loops on `429` / `403`.
 
 ## PAT Storage Decision
-- For Version 1, PAT storage is handled strictly via temporary in-memory storage. Because PATs are stored ephemerally in server memory and not persisted across container restarts, additional static server-side encryption is not required. Cloud Firestore backend access via `firebase-admin` is deferred due to IAM access restrictions, keeping the MVP highly secure and stateless.
+- For Version 1, PAT storage originally used in-memory maps, but has now been migrated to Firestore to ensure persistence across server restarts over development iterations. The tokens are securely constrained to backend fetch contexts only, completely denying read-access from the client side using Firestore `rules`.
 
 ## JSON Export Schema Contract
 - JSON export schema version: `github-pages-auditor.export.v1`
@@ -79,6 +86,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Automatic token cleanup for timed-out/expired anonymous sessions will be handled by a scheduled Cloud Function in a future iteration.
 
 ## Change Log for Agents
+- Updated specifications docs (, , ) to formally codify the in-memory fallback strategy for PATs and the simplification of the UI storage flows due to sandbox limits on Firestore.
 - Initialized `AGENTS.md` to track project architecture and constraints.
 - Processed `docs/spec-appendix-github-api.md`. Used explicit Endpoint allowlist string checks.
 - Implemented pagination parsing on `/user/repos`.
@@ -92,4 +100,6 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Implemented active double-guard on Express start bindings allowing sync automated tests execution without hangs.
 - Auth stub security strengthened behind `ALLOW_DUMMY_AUTH` gating.
 - Added systematic test coverage in `tests/comprehensive.test.ts` matching 23 assertions for API subpath restricts, classification engines, schema outputs, and CSV defenses.
+- Simplified log-in screen and authenticated layout, completely eliminating redundant headlines (like "Sign in to Auditor" and verbose descriptive subtitles) and permanent dashboards banner elements to prevent UI clutter.
+- Introduced a minimalist "What's this app?" help-modal feature on the logged-in dashboard workspace, hosting full application detail and security parameters gracefully on request.
 

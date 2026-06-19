@@ -92,7 +92,7 @@ Forbidden providers in Version 1:
 - custom OIDC
 - any other persistent external provider
 
-Persistent Google users may store PAT records and audit history.
+Persistent Google users use an in-memory PAT per session for V1. PAT records and audit history persistence is deferred to a future version.
 
 Anonymous users are allowed only for non-persistent guest mode. Anonymous users may run a temporary one-shot audit, but must not create persistent stored PATs by default. Any server-side data for anonymous users must be temporary and have expiration metadata.
 
@@ -360,27 +360,31 @@ Even if the PAT has write-capable permissions, the application must not perform 
 
 14. UI Requirements
 
-The UI should include:
+The UI focuses on structural clarity and minimalist, clutter-free aesthetics:
 
-- Login screen
-  - Google sign-in for persistent use
-  - Optional guest mode for anonymous non-persistent use
-  - No GitHub login button
-- Dashboard
-  - repository count
-  - Pages enabled count
-  - custom domain count
-  - verified / unverified / unknown counts
-  - HTTPS problem count
-  - deployment method counts
-- PAT settings for Google users
-  - add PAT
-  - validate PAT
-  - delete PAT
-  - list stored PAT metadata
-  - never display PAT plaintext
+- Login screen (Logged-out States)
+  - Displays a rich visual banner for "Security & Custom Domain Auditor" detailing the GitHub Pages security auditing capabilities before authorization occurs.
+  - To prevent UI noise, explicit heading texts like "Sign in to Auditor" or redundant explanations (e.g., "Authenticate to securely...") are completely removed, keeping only the elegant card containing sign-in utilities.
+  - Google sign-in for persistent use.
+  - Optional guest mode for anonymous non-persistent use.
+  - No raw GitHub login buttons.
+- Dashboard & Header (Logged-in States)
+  - Employs a clean layout prioritizing analytics, removing verbose permanent banners, descriptive texts, or subtitles (such as "Pages Security Audit - Analyze your GitHub repositories...").
+  - Embeds a neat, discreet utility link button labeled "What's this app?" alongside an info icon.
+  - Clicking "What's this app?" exposes a modal detailing the "Security & Custom Domain Auditor" goals, emphasizing its read-only background-to-backend pipeline and dynamic browser guest-memory safety.
+  - Repository count and statistics summary.
+  - Pages enabled count.
+  - Custom domain count.
+  - Verified / unverified / unknown counts.
+  - HTTPS problem count.
+  - Deployment method counts.
+- PAT input for Google users
+  - Add PAT (securely processed first-choice persistence via Firestore, with zero client-readability).
+  - Validate PAT.
+  - Delete PAT (safely purging Firestore records).
+  - Never display PAT plaintext in the UI.
 - One-shot PAT input for anonymous guest mode
-  - no persistent PAT storage by default
+  - No persistent PAT storage by default.
 - Audit run page
 - Repository result table
 - Repository detail drawer

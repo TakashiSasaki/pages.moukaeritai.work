@@ -26,32 +26,12 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [pat, setPat] = useState('');
+  const { user, hasStoredPat } = useAuth();
   const [isAuditing, setIsAuditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [results, setResults] = useState<RepositoryResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
-  const [hasStoredPat, setHasStoredPat] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    const checkPatStatus = async () => {
-      try {
-        const token = await user.getIdToken();
-        const res = await fetch('/api/pat/status', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setHasStoredPat(!!data.hasPat);
-      } catch (e) {
-        // Ignore
-      }
-    };
-    checkPatStatus();
-  }, [user]);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   // Filtering & Search states
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,53 +43,13 @@ export default function Dashboard() {
   const pagesEnabledList = results?.filter(r => r.hasPages) || [];
   const customDomainList = pagesEnabledList.filter(r => r.cname);
 
-  const savePat = async () => {
-    if (!pat) {
-      setError('Please provide a PAT to save.');
-      return;
-    }
-    setError(null);
-    setSuccessMsg(null);
-    setIsSaving(true);
-    try {
-      const token = await user?.getIdToken();
-      const res = await fetch('/api/pat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ pat })
-      });
-      if (!res.ok) throw new Error('Failed to save PAT');
-      setSuccessMsg('PAT securely saved to Cloud.');
-      setHasStoredPat(true);
-      setPat('');
-    } catch (err: any) {
-      setError(err.message || 'Error saving PAT.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const runAudit = async () => {
-    if (!pat && !hasStoredPat) {
-      setError('Please provide your GitHub Personal Access Token.');
+    if (!hasStoredPat) {
+      setError('Please configure your GitHub Personal Access Token in the profile menu.');
       return;
-    }
-    
-    // PAT formatting basic sanity check to help user
-    if (pat) {
-      const isClassic = pat.startsWith('ghp_');
-      const isFineGrained = pat.startsWith('github_pat_');
-      if (!isClassic && !isFineGrained && pat.length < 20) {
-        setError('The token you entered does not match standard GitHub Classic (ghp_...) or Fine-grained (github_pat_...) formats. Please double check.');
-        return;
-      }
     }
 
     setError(null);
-    setSuccessMsg(null);
     setIsAuditing(true);
     setResults(null);
 
@@ -119,10 +59,6 @@ export default function Dashboard() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
-      
-      if (pat) {
-        headers['x-temp-pat'] = pat;
-      }
 
       const res = await fetch('/api/audit/run', {
         method: 'POST',
@@ -145,7 +81,7 @@ export default function Dashboard() {
   const exportJson = () => {
     if (!results) return;
     
-    const exportData = buildJsonExport(results, pat);
+    const exportData = buildJsonExport(results, "");
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -199,146 +135,113 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       
-      {/* Visual Identity Hero */}
-      <div className="bg-slate-900 text-white rounded-2xl p-8 border border-slate-800 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-          <Database className="w-48 h-48" />
-        </div>
-        <div className="relative z-10 space-y-3 max-w-3xl">
-          <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-            <ShieldCheck className="w-3.5 h-3.5 mr-1" />
-            GitHub Pages Security Auditing
-          </div>
-          <h2 className="text-3xl font-semibold tracking-tight">
-            Security & Custom Domain Auditor
-          </h2>
-          <p className="text-slate-300 text-base leading-relaxed">
-            Audit GitHub Pages status, custom domains, HTTPS status, and deployment configurations across all your repositories in one click. Completely read-only and processed dynamically in browser guest memory.
-          </p>
-          <div className="flex flex-wrap gap-4 pt-2">
-            <button 
-              onClick={() => setShowGuide(!showGuide)}
-              className="inline-flex items-center text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
-            >
-              <HelpCircle className="w-4 h-4 mr-1.5" />
-              {showGuide ? 'Hide Token Guide' : 'How to obtain a safe Token?'}
-            </button>
-          </div>
-        </div>
+      {/* Mini top utilities to show the app details dialog */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowInfoModal(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-slate-200"
+        >
+          <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+          What's this app?
+        </button>
       </div>
 
-      {/* Guide Section */}
-      {showGuide && (
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm text-blue-900 space-y-4">
-          <h3 className="text-base font-semibold flex items-center">
-            <ShieldCheck className="w-5 h-5 mr-2 text-blue-600" />
-            Creating a Safe Read-Only GitHub PAT
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-            <div className="space-y-2">
-              <h4 className="font-medium text-blue-800">Option A: Fine-Grained Token (Recommended)</h4>
-              <ol className="list-decimal pl-5 space-y-1 text-blue-700">
-                <li>Go to GitHub → Settings → Developer Settings → Personal Access Tokens → Fine-grained tokens.</li>
-                <li>Give the token a name and set expiration.</li>
-                <li>Under Repository access, choose <strong>Only select repositories</strong> or All.</li>
-                <li>Under Permissions → Repository permissions, grant:
-                  <ul className="list-disc pl-5 mt-1 space-y-0.5">
-                    <li><strong>Metadata</strong>: Read-only (auto-selected)</li>
-                    <li><strong>Pages</strong>: Read-only</li>
-                  </ul>
-                </li>
-                <li>Generate and paste the token below.</li>
-              </ol>
+      {/* Dialog / Modal for Info */}
+      {showInfoModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          {/* Backdrop wrapper */}
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" 
+              aria-hidden="true"
+              onClick={() => setShowInfoModal(false)}
+            ></div>
+
+            {/* Centering element */}
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            {/* Modal panel */}
+            <div className="relative inline-block align-bottom bg-slate-950 text-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-slate-800">
+              {/* Close button */}
+              <button 
+                type="button" 
+                onClick={() => setShowInfoModal(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <span className="sr-only">Close</span>
+                <XCircle className="w-6 h-6" />
+              </button>
+
+              {/* Banner visual */}
+              <div className="p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+                  <Database className="w-40 h-40" />
+                </div>
+                <div className="relative z-10 space-y-4">
+                  <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                    GitHub Pages Security Auditing
+                  </div>
+                  <h3 className="text-2xl font-semibold tracking-tight" id="modal-title">
+                    Security & Custom Domain Auditor
+                  </h3>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    Audit GitHub Pages status, custom domains, HTTPS status, and deployment configurations across all your repositories in one click. Completely read-only and processed dynamically in browser guest memory.
+                  </p>
+                  <p className="text-slate-400 text-xs">
+                    This is a secure application. All checks are performed backend-to-backend or inside secure sandboxed scripts to ensure your data stays private and safe.
+                  </p>
+                  
+                  <div className="pt-4 border-t border-slate-800 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowInfoModal(false)}
+                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                    >
+                      Got it
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-medium text-blue-800">Option B: Classic Token</h4>
-              <ol className="list-decimal pl-5 space-y-1 text-blue-700">
-                <li>Go to Settings → Developer Settings → Personal Access Tokens → Tokens (classic).</li>
-                <li>Generate new token.</li>
-                <li>Select the <strong>repo</strong> scope if some repositories are private, or simply <strong>read:project</strong> for public repos.</li>
-                <li>Ensure NO write scopes are selected.</li>
-              </ol>
-            </div>
-          </div>
-          <div className="text-xs bg-blue-100/60 p-3 rounded-lg border border-blue-200/50 flex items-start text-blue-800">
-            <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-            <span><strong>No Write Capability:</strong> This applet is designed to never call any write, dispatch, or delete endpoints. The auditor restricts its actions strictly to page settings and metadata gathering.</span>
           </div>
         </div>
       )}
 
-      {/* Configuration Section */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
-        <h2 className="text-base font-medium text-gray-950 flex items-center justify-between">
-          <div className="flex items-center">
-            <Key className="w-4 h-4 mr-2 text-slate-500" />
-            GitHub Personal Access Token
-          </div>
-          {hasStoredPat && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <CheckCircle className="w-3 h-3 mr-1" />
+      {/* Control Section */}
+      <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center">
+          {hasStoredPat ? (
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <CheckCircle className="w-4 h-4 mr-1.5" />
               Secure Token Loaded from Cloud
             </span>
+          ) : (
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
+              <Key className="w-4 h-4 mr-1.5" />
+              Token Not Configured (Set in Profile Menu)
+            </span>
           )}
-        </h2>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <input 
-              type="password" 
-              placeholder={hasStoredPat ? "Enter a new token to overwrite..." : "Paste your Classic (ghp_...) or Fine-grained (github_pat_...) token here..."}
-              className="w-full pl-4 pr-12 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-shadow text-sm"
-              value={pat}
-              onChange={(e) => setPat(e.target.value)}
-            />
-            {pat && (
-              <span className="absolute right-3 top-3 text-xs font-mono text-gray-400 select-none">
-                {pat.length} chars
-              </span>
-            )}
-          </div>
-          <button 
-            onClick={savePat}
-            disabled={!pat || isSaving}
-            className="px-4 py-2.5 bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 flex items-center justify-center font-medium shadow-sm transition-all text-sm cursor-pointer"
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-1.5" />
-                Save to Cloud
-              </>
-            )}
-          </button>
-          <button 
-            onClick={runAudit}
-            disabled={isAuditing || (!pat && !hasStoredPat)}
-            className="px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center font-medium shadow-sm transition-all text-sm cursor-pointer"
-          >
-            {isAuditing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Auditing...
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 mr-2 fill-current" />
-                Launch Audit
-              </>
-            )}
-          </button>
         </div>
-        <p className="text-xs text-gray-500">
-          Your token is securely processed in memory on our server. It is never persisted to disk and is safely isolated per session.
-        </p>
+        
+        <button 
+          onClick={runAudit}
+          disabled={isAuditing || !hasStoredPat}
+          className="w-full sm:w-auto px-8 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center font-medium shadow-sm transition-all text-sm cursor-pointer"
+        >
+          {isAuditing ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Auditing...
+            </>
+          ) : (
+            <>
+              <Play className="w-4 h-4 mr-2 fill-current" />
+              Launch Audit
+            </>
+          )}
+        </button>
       </div>
-
-      {successMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center text-emerald-800 shadow-xs animate-fade-in text-sm">
-          <CheckCircle className="w-5 h-5 mr-3 text-emerald-600 flex-shrink-0" />
-          <span className="font-medium text-emerald-900">{successMsg}</span>
-        </div>
-      )}
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start text-red-800 shadow-xs animate-fade-in text-sm">

@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import fs from 'fs';
-import * as admin from 'firebase-admin';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import dotenv from 'dotenv';
@@ -33,8 +32,9 @@ try {
   if (!getApps().length) {
     if (fs.existsSync('./firebase-applet-config.json')) {
       const config = JSON.parse(fs.readFileSync('./firebase-applet-config.json', 'utf-8'));
+      // Only set projectId so verifyIdToken can work without requiring full GCP credentials
       initializeApp({
-        projectId: config.projectId,
+        projectId: config.projectId || config.firebaseProjectId
       });
     } else {
       initializeApp();
@@ -77,7 +77,7 @@ async function verifyAuth(req: express.Request, res: express.Response, next: exp
 
 // --- API ROUTES ---
 
-// 1. PAT Management
+// 1. PAT Management (Client directly uses Firestore now)
 app.post('/api/pat/validate', verifyAuth, async (req, res) => {
   const { pat } = req.body;
   if (!pat) return res.status(400).json({ error: 'PAT is required' });
@@ -142,10 +142,10 @@ app.get('/api/audit/user', verifyAuth, async (req, res) => {
   const storedPat = await getPatFromFirestore(user.uid, isAnonymous);
   
   const pat = storedPat || req.headers['x-temp-pat'];
-  if (!pat) return res.status(400).json({ error: 'No GitHub PAT provided' });
+  if (!pat || typeof pat !== 'string') return res.status(400).json({ error: 'No GitHub PAT provided' });
 
   try {
-    const response = await githubApi('/user', pat as string);
+    const response = await githubApi('/user', pat);
     if (!response.ok) {
       return res.status(response.status).json({ error: 'GitHub API error', details: await response.text() });
     }
@@ -162,7 +162,7 @@ app.post('/api/audit/run', verifyAuth, async (req, res) => {
   const storedPat = await getPatFromFirestore(user.uid, isAnonymous);
   
   const pat = storedPat || req.headers['x-temp-pat'];
-  if (!pat) return res.status(400).json({ error: 'No GitHub PAT provided' });
+  if (!pat || typeof pat !== 'string') return res.status(400).json({ error: 'No GitHub PAT provided' });
 
   try {
     // 1. Fetch repositories with pagination
