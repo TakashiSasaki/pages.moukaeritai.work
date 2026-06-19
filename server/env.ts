@@ -29,18 +29,38 @@ export function validateBackendEnv(): BackendEnv {
       }
     }
   } catch (error) {
-    console.warn("Could not read firebase-applet-config.json", error);
+    console.warn("WARNING: Unable to parse firebase-applet-config.json.", error);
   }
 
-  // Validation warnings/logs
-  if (NODE_ENV === 'production') {
-    if (!hasFirebaseConfig) {
-      console.warn("WARNING: Running in production but firebase-applet-config.json is missing or invalid. Firebase ID Token verification will fail.");
-    }
+  // Actionable warnings and state validation
+  if (!hasFirebaseConfig) {
+    const errorMsg = [
+      "==============================================================================",
+      "🚨 FIREBASE CONFIGURATION INCOMPLETE",
+      "==============================================================================",
+      "The 'firebase-applet-config.json' file is missing, empty, or lacks a mapping",
+      "for 'projectId' / 'firebaseProjectId'.",
+      "",
+      "👉 TO RESOLVE:",
+      "Execute the AI Studio 'set_up_firebase' tool. This will provision your database,",
+      "initialize security rules, and generate 'firebase-applet-config.json' automatically.",
+      "",
+      "⚠️ DEPLOYMENT IMPACT:",
+      NODE_ENV === 'production' 
+        ? "CRITICAL: Under production node settings, backend API token verifications will FAIL." 
+        : "DEVELOPMENT: Falling back to local authentication bypass if enabled via ALLOW_DUMMY_AUTH.",
+      "=============================================================================="
+    ].join('\n');
+
+    console.warn(errorMsg);
   } else {
-    if (ALLOW_DUMMY_AUTH) {
-      console.log("INFO: ALLOW_DUMMY_AUTH is enabled. 'dummy-token' is permitted for development/testing.");
-    }
+    console.log(`✅ Firebase loaded successfully. Project: "${projectId}"`);
+  }
+
+  if (ALLOW_DUMMY_AUTH && NODE_ENV === 'production') {
+    console.warn("⚠️ SECURITY WARNING: ALLOW_DUMMY_AUTH is enabled in production! This bypasses security checks and should be disabled.");
+  } else if (ALLOW_DUMMY_AUTH) {
+    console.log("ℹ️ INFO: ALLOW_DUMMY_AUTH is active. Client bypass using 'dummy-token' is permitted.");
   }
 
   return {

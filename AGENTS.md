@@ -98,34 +98,40 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - `schemas/` - Export JSON schemas.
 
 ## Current Implementation Status
-- Release Candidate Hardening Phase. The UI design is near completion.
-- Established a TypeScript-first schema pipeline. JSON Schema files are strictly generated artifacts.
-- Formalized boundary between internal runtime/UI data and exported interchange data (`ExportRepositoryResult` vs `RepositoryResult`).
-- Firestore document types are provisionally encoded in `src/schema/firestoreTypes.ts`.
-- Secure endpoints separation, pure shared classification models, defensive CSV and fully-compliant JSON exporters are verified under comprehensive automated tests.
+- Pre-Production Validation Baseline. All core backend, shared, export and path modules are hardened and verified via automated test suites.
+- Added explicit environment validation modules for frontend (`src/lib/env.ts`) and backend (`server/env.ts`) checking configuration completeness without crashing runtime operations.
+- Extracted and formalized firestore paths into a decoupled module `src/lib/firestorePaths.ts`, fully tested in the suite.
+- Established a complete, isolated, and secure security ruleset in `firestore.rules` (pointed by `firebase.json`), fully verified using rule simulation tests (`tests/rules.test.ts`).
+
+## Deployment readiness and Rules Contract
+- **Existence Audit**:
+  - `firebase.json`: Present
+  - `.firebaserc`: Absent (must be set individually or explicitly before hosting deployment is triggered)
+  - `firestore.rules`: Present
+  - `firestore.indexes.json`: Absent (no active complex compound filtering indexes needed for V1 audits list)
+  - `.env.example`: Present with structured sectioning
+  - `vite.config.ts`: Present
+  - `src/lib/firebase.ts`: Present
+- **Rules Path Tenanting**:
+  - Google authenticated users: `githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default` and `githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}`
+  - Anonymous guest users: `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default`
+  - Restricts access strictly to matching `request.auth.uid == uid` and blocks all other paths, denying generic top-level collections (e.g. `/users`, `/tokens`).
+- **Deploy Command**: `firebase deploy --only firestore:rules` after choosing your active Firebase project.
+- **Rule Verification**: Done via `npx tsx --test tests/rules.test.ts` (runs pre-compiled simulations matching rules logic under the standard Node unit runner).
+
+## Recommended Deployment Target
+- **Primary recommendation**: **Cloud Run (Docker)** or **Firebase App Hosting**.
+- **Crucial Warning**: Standard Firebase Hosting alone *cannot* run the Express backend. Firebase Hosting must be paired with Cloud Run via rewrites matching `/api/*` if edge CDN is desired.
 
 ## Known Constraints and Open Questions
-- Automatic token cleanup for timed-out/expired anonymous sessions will be handled by a scheduled Cloud Function in a future iteration.
-- End-to-end UI regression tests (e.g., Playwright) are planned as next work, as the current test stack strictly covers backend schemas and unit methods natively via the Node test runner.
+- Automatic token cleanup for timed-out/expired anonymous sessions is currently not enforced and is recognized as a future serverless/scheduler capability.
+- Full browser E2E automated regressions is a future roadmap milestone documented under `docs/ui-regression-plan.md`.
 
 ## Change Log for Agents
-- Hardened into Release Candidate baseline: decoupled internal UI types (`src/types.ts`) from interchangeable schema types (`src/schema/exportTypes.ts`).
-- Added automated TypeScript-to-JSON Schema generation (`npm run schema:generate`) using `ts-json-schema-generator`.
-- Provisionally typed Firestore objects in `src/schema/firestoreTypes.ts`.
-- Updated specifications docs to formally codify PAT storage strategy.
-- Initialized `AGENTS.md` to track project architecture and constraints.
-- Processed `docs/spec-appendix-github-api.md`. Used explicit Endpoint allowlist string checks.
-- Implemented pagination parsing on `/user/repos`.
-- Implemented `x-ratelimit-remaining` and error classification.
-- Fixed `publishSourceSummary` inside `types.ts` and `server.ts`.
-- Processed `docs/spec-appendix-firebase.md` and updated Firestore / Cloud Functions contracts.
-- Processed JSON Export Schema and created complete `schemas/github-pages-auditor-export-v1.schema.json`.
-- Refactored `server.ts` to separate raw endpoint fetches and allowlist matching into `server/githubClient.ts`.
-- Subdivided domain, SSL certificate, and deployment methods logic into pure shared classification module `src/audit/classification.ts`.
-- Moved JSON/CSV exporters out of components into pure builders under `src/export/exportBuilders.ts`, fully validating schema properties.
-- Implemented active double-guard on Express start bindings allowing sync automated tests execution without hangs.
-- Auth stub security strengthened behind `ALLOW_DUMMY_AUTH` gating.
-- Added systematic test coverage in `tests/comprehensive.test.ts`.
-- Simplified log-in screen and authenticated layout.
-- Introduced a minimalist "What's this app?" help-modal feature on the logged-in dashboard workspace.
+- Decoupled environment normalization and user path resolution into pure module `src/lib/firestorePaths.ts`.
+- Integrated automated rules validation test suite in `tests/rules.test.ts` proving cross-tenant security holds.
+- Introduced formal environment validators: `server/env.ts` warns about production configs and `src/lib/env.ts` displays a persistent, non-crashing banner in the UI when Firebase is unprovisioned.
+- Added scripts `test:rules` and `test:unit` to `package.json` while maintaining a green parent `npm test` script.
+- Documented deployment readiness roadmap in `docs/deployment-readiness.md` and UI testing roadmap in `docs/ui-regression-plan.md`.
+- Consolidated overall setup and configurations into `README.md`.
 
