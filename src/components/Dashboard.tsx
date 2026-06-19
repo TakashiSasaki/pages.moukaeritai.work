@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { RepositoryResult } from '../types';
@@ -118,6 +118,25 @@ export default function Dashboard() {
       navigate(basePath === '/' ? '/schema' : `${basePath}/schema`);
     }
   };
+
+  // Memoized JSON export string and tokenized elements to address extreme latency issues
+  const jsonExportString = useMemo(() => {
+    if (!results) return '';
+    return JSON.stringify(buildJsonExport(results, ""), null, 2);
+  }, [results]);
+
+  const highlightedJsonElements = useMemo(() => {
+    if (!jsonExportString) return null;
+    return highlightJson(jsonExportString);
+  }, [jsonExportString]);
+
+  const schemaString = useMemo(() => {
+    return JSON.stringify(schema, null, 2);
+  }, []);
+
+  const highlightedSchemaElements = useMemo(() => {
+    return highlightJson(schemaString);
+  }, [schemaString]);
 
   // Check for existing cached audit on load or after audits are finished
   useEffect(() => {
@@ -1214,7 +1233,7 @@ export default function Dashboard() {
                       </>
                     )}
                   </button>
-                  <CopyButton text={JSON.stringify(buildJsonExport(results, ""), null, 2)} />
+                  <CopyButton text={jsonExportString} />
                 </div>
               </div>
 
@@ -1256,7 +1275,7 @@ export default function Dashboard() {
               {/* High-density code preview */}
               <div className="flex-1 overflow-auto bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 select-text max-h-[600px]">
                 <div className="space-y-0.5 select-text">
-                  {highlightJson(JSON.stringify(buildJsonExport(results, ""), null, 2))}
+                  {highlightedJsonElements}
                 </div>
               </div>
             </div>
@@ -1274,7 +1293,7 @@ export default function Dashboard() {
                     This is the schema definition conforming to Draft-07 syntax, located in <span className="font-mono text-slate-200">schemas/github-pages-auditor-export-v1.schema.json</span>.
                   </p>
                 </div>
-                <CopyButton text={JSON.stringify(schema, null, 2)} />
+                <CopyButton text={schemaString} />
               </div>
 
               {/* Informational banner */}
@@ -1289,7 +1308,7 @@ export default function Dashboard() {
               {/* High-density code preview */}
               <div className="flex-1 overflow-auto bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 select-text max-h-[600px]">
                 <div className="space-y-0.5 select-text">
-                  {highlightJson(JSON.stringify(schema, null, 2))}
+                  {highlightedSchemaElements}
                 </div>
               </div>
             </div>
@@ -1404,6 +1423,15 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Simple custom tokenizer to syntax highlight JSON strings
 function highlightJson(str: string): React.ReactNode[] {
   const lines = str.split('\n');
@@ -1414,14 +1442,13 @@ function highlightJson(str: string): React.ReactNode[] {
     const indent = indentMatch ? indentMatch[1] : '';
     let remaining = line.substring(indent.length);
     
-    const parts: React.ReactNode[] = [];
-    parts.push(<span key="indent">{indent}</span>);
+    let html = escapeHtml(indent);
     
     // Match key: "key":
     const keyMatch = remaining.match(/^("[^"]+")\s*:/);
     if (keyMatch) {
-      parts.push(<span key="key" className="text-purple-400 font-semibold">{keyMatch[1]}</span>);
-      parts.push(<span key="colon" className="text-slate-400">:</span>);
+      html += `<span class="text-purple-405 font-semibold">${escapeHtml(keyMatch[1])}</span>`;
+      html += `<span class="text-slate-405">:</span>`;
       remaining = remaining.substring(keyMatch[0].length);
     }
     
@@ -1434,27 +1461,37 @@ function highlightJson(str: string): React.ReactNode[] {
       const bracketMatch = remaining.match(/^(\s*[{}\[\]]+)([, ]*)/);
       
       if (stringValueMatch) {
-        parts.push(<span key={`str-${remaining.length}`} className="text-emerald-400 font-medium">{stringValueMatch[1]}</span>);
-        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{stringValueMatch[2]}</span>);
+        html += `<span class="text-emerald-405 font-medium">${escapeHtml(stringValueMatch[1])}</span>`;
+        if (stringValueMatch[2]) {
+          html += `<span class="text-slate-500">${escapeHtml(stringValueMatch[2])}</span>`;
+        }
         remaining = remaining.substring(stringValueMatch[0].length);
       } else if (numberValueMatch) {
-        parts.push(<span key={`num-${remaining.length}`} className="text-amber-500 font-mono">{numberValueMatch[1]}</span>);
-        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{numberValueMatch[2]}</span>);
+        html += `<span class="text-amber-500 font-mono">${escapeHtml(numberValueMatch[1])}</span>`;
+        if (numberValueMatch[2]) {
+          html += `<span class="text-slate-500">${escapeHtml(numberValueMatch[2])}</span>`;
+        }
         remaining = remaining.substring(numberValueMatch[0].length);
       } else if (boolValueMatch) {
-        parts.push(<span key={`bool-${remaining.length}`} className="text-blue-400 font-semibold">{boolValueMatch[1]}</span>);
-        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{boolValueMatch[2]}</span>);
+        html += `<span class="text-blue-400 font-semibold">${escapeHtml(boolValueMatch[1])}</span>`;
+        if (boolValueMatch[2]) {
+          html += `<span class="text-slate-500">${escapeHtml(boolValueMatch[2])}</span>`;
+        }
         remaining = remaining.substring(boolValueMatch[0].length);
       } else if (nullValueMatch) {
-        parts.push(<span key={`null-${remaining.length}`} className="text-rose-400 italic">{nullValueMatch[1]}</span>);
-        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{nullValueMatch[2]}</span>);
+        html += `<span class="text-rose-400 italic">${escapeHtml(nullValueMatch[1])}</span>`;
+        if (nullValueMatch[2]) {
+          html += `<span class="text-slate-500">${escapeHtml(nullValueMatch[2])}</span>`;
+        }
         remaining = remaining.substring(nullValueMatch[0].length);
       } else if (bracketMatch) {
-        parts.push(<span key={`bracket-${remaining.length}`} className="text-slate-400 font-medium">{bracketMatch[1]}</span>);
-        parts.push(<span key={`comma-${remaining.length}`} className="text-slate-500">{bracketMatch[2]}</span>);
+        html += `<span class="text-slate-400 font-medium">${escapeHtml(bracketMatch[1])}</span>`;
+        if (bracketMatch[2]) {
+          html += `<span class="text-slate-500">${escapeHtml(bracketMatch[2])}</span>`;
+        }
         remaining = remaining.substring(bracketMatch[0].length);
       } else {
-        parts.push(<span key={`rest-${remaining.length}`} className="text-slate-300">{remaining}</span>);
+        html += `<span class="text-slate-300">${escapeHtml(remaining)}</span>`;
         break;
       }
     }
@@ -1465,9 +1502,7 @@ function highlightJson(str: string): React.ReactNode[] {
         <span className="w-12 select-none text-right pr-4 text-slate-500 font-mono text-[10px] border-r border-slate-800 mr-4 shrink-0">
           {i + 1}
         </span>
-        <span className="select-all whitespace-pre pr-4">
-          {parts}
-        </span>
+        <span className="select-all whitespace-pre pr-4" dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     );
   });

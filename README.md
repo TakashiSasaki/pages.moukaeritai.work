@@ -29,8 +29,6 @@ ALLOW_DUMMY_AUTH="true"
 
 # App URL for absolute references and self-routing
 APP_URL="http://localhost:3000"
-
-# Note: GEMINI_API_KEY is NOT required. GitHub Pages Auditor does not use Gemini or AI for any core features.
 ```
 
 ### 3. Firebase Configuration & Startup Check
@@ -112,4 +110,4 @@ firebase deploy --only firestore:rules
 5.  **No GitHub Write APIs**: Restricts all proxy calls to GET operations. No settings, repos, or workflows are ever modified.
 6.  **No Workflow/Actions APIs**: Workflows and Actions routes are absolutely forbidden to safeguard repository CI/CD configurations.
 7.  **No Cloud Functions**: Audit caches and transient records are read/written directly via the Firebase Client SDK.
-8.  **No Gemini/AI Integration**: Google Gemini, `@google/genai` libraries, and `GEMINI_API_KEY` are strictly out of scope. The application does not use artificial intelligence, LLM generation, or cognitive agents for auditing, authentication, persistence, deployment, or export.
+8.  **No Gemini/AI Integration**: Google Gemini, `@google/genai` libraries, or any artificial intelligence models/SDKs are strictly out of scope. The application does not use artificial intelligence, LLM generation, or cognitive agents for auditing, authentication, persistence, deployment, or export. It is strictly client-and-backend procedural code.

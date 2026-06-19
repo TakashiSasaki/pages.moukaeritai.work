@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Deployment Readiness Baseline
-Version: `1.1.0` (Release Candidate Milestone)
+Version: `1.2.0` (Release Candidate Milestone)
 
 This document formalizes the production deployment status, custom domain readiness, and infrastructure requirements for the **GitHub Pages Auditor** application.
 

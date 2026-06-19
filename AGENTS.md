@@ -23,7 +23,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - GitHub App authentication is not planned for this project.
 - GitHub API access is PAT-only.
 - Firebase Auth is strictly for application user identity.
-- No Gemini/AI Integration: The application does not use Gemini, Google GenAI SDK, or "GEMINI_API_KEY" for auditing, authentication, persistence, deployment, or export. It is strictly client-and-backend procedural code without any AI dependencies.
+- No Gemini/AI Integration: The application does not use Gemini, Google GenAI SDK, or any LLM-based services for auditing, authentication, persistence, deployment, or export. It is strictly client-and-backend procedural code without any AI dependencies.
 - There are no callback routes, installation hooks, or token-handling structures for OAuth or App integrations.
 - Do not describe GitHub OAuth or GitHub App as "future work", "not used in Version 1", or "could be added later".
 - The backend must never return PAT plaintext to the browser; the browser manages its own copy.
