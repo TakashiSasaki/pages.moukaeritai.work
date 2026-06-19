@@ -759,4 +759,88 @@ describe('CSV Export Regression and Live Data Diagnostics', () => {
   });
 });
 
+describe('External Consumer Sample File Validation Check', () => {
+  it('validates generated sample files under examples/ folder against their corresponding schemas', () => {
+    // 1. Read v1 schema and sample
+    const v1Schema: any = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'schemas/github-pages-auditor-export-v1.schema.json'), 'utf-8')
+    );
+    const v1Sample: any = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'examples/github-pages-auditor-export-v1.sample.json'), 'utf-8')
+    );
+
+    const ajv = new Ajv({ strict: false });
+    const validateV1 = ajv.compile(v1Schema);
+    const validV1 = validateV1(v1Sample);
+    if (!validV1) {
+      console.error('V1 sample validation errors:', validateV1.errors);
+    }
+    assert.ok(validV1, 'Default V1 sample JSON must validate against schemas/github-pages-auditor-export-v1.schema.json');
+
+    // 2. Read v2 schema and sample
+    const v2Schema: any = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'schemas/github-pages-auditor-export-v2.schema.json'), 'utf-8')
+    );
+    const v2Sample: any = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'examples/github-pages-auditor-export-v2.sample.json'), 'utf-8')
+    );
+
+    const validateV2 = ajv.compile(v2Schema);
+    const validV2 = validateV2(v2Sample);
+    if (!validV2) {
+      console.error('V2 sample validation errors:', validateV2.errors);
+    }
+    assert.ok(validV2, 'Interchange candidate V2 sample JSON must validate against schemas/github-pages-auditor-export-v2.schema.json');
+
+    // 3. Assert schemaId values are stable and aligned with active stable URN identifiers
+    assert.strictEqual((v1Sample as any).schemaId, v1Schema.$id, 'V1 sample schemaId matches V1 schema ID');
+    assert.strictEqual((v1Sample as any).schemaId, 'urn:uuid:ef46fd93-424a-4e2a-8f5b-df97e28b2be1', 'V1 stable schema ID constant');
+    assert.strictEqual((v2Sample as any).schemaId, v2Schema.$id, 'V2 sample schemaId matches V2 schema ID');
+    assert.strictEqual((v2Sample as any).schemaId, 'urn:uuid:7d0f98be-8cba-49c5-84dc-66914b5da3f2', 'V2 stable schema ID constant');
+
+    // 4. Assert nesting blocks with repositories, pages, findings are correctly represented on V2 sample
+    assert.ok(Array.isArray((v2Sample as any).repositories), 'V2 sample repositories is array');
+    const firstObj = (v2Sample as any).repositories[0];
+    assert.ok(firstObj.repository, 'V2 sample contains repositories[0].repository');
+    assert.ok(firstObj.pages, 'V2 sample contains repositories[0].pages');
+    assert.ok(Array.isArray(firstObj.findings), 'V2 sample contains repositories[0].findings as array');
+
+    // 5. Assert unknown protectedState maps to unverified verification state cleanly in V2
+    const blankDomainObj = (v2Sample as any).repositories.find((r: any) => r.repository.name === 'custom-domain-blank-protected');
+    assert.ok(blankDomainObj);
+    assert.strictEqual(blankDomainObj.pages.customDomain.verificationState, 'unknown', 'V2 sample unknown protectedState should fall back to unknown verificationState');
+
+    // 6. Assert secret minimization holds for both JSON sample files
+    const v1Text = JSON.stringify(v1Sample);
+    const v2Text = JSON.stringify(v2Sample);
+    const csvContent = fs.readFileSync(path.join(process.cwd(), 'examples/github-pages-auditor-export.sample.csv'), 'utf-8');
+
+    const secretShieldPatterns = [
+      'ghp_', 'github_pat_', 'Bearer', 'githubPagesAuditorV1', 'users/', 'anonymousSessions/'
+    ];
+
+    for (const secret of secretShieldPatterns) {
+      assert.ok(!v1Text.includes(secret), `V1 sample must not leak pattern ${secret}`);
+      assert.ok(!v2Text.includes(secret), `V2 sample must not leak pattern ${secret}`);
+      assert.ok(!csvContent.includes(secret), `CSV sample must not leak pattern ${secret}`);
+    }
+
+    // 7. Assert stable 27 columns CSV structure
+    const csvLines = csvContent.split('\n').filter(Boolean);
+    const headers = csvLines[0].split(',');
+    assert.strictEqual(headers.length, 27, 'CSV sample must possess exactly 27-column layout');
+    for (let i = 1; i < csvLines.length; i++) {
+      const line = csvLines[i];
+      // simplified column count parse
+      let columns = 0;
+      let inQuotes = false;
+      for (const char of line) {
+        if (char === '"') inQuotes = !inQuotes;
+        if (char === ',' && !inQuotes) columns++;
+      }
+      assert.strictEqual(columns + 1, 27, `CSV row ${i} must have exactly 27 elements`);
+    }
+  });
+});
+
 

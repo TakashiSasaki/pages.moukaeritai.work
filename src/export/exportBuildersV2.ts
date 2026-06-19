@@ -100,7 +100,68 @@ export function toExportRepositoryRecordV2(r: RepositoryResult): V2AuditReposito
 
   const findings: V2Finding[] = [];
 
-  if (r.hasPages) {
+  if (!r.hasPages) {
+    findings.push({
+      code: 'pages_disabled',
+      category: 'pages',
+      severity: 'info',
+      source: 'github_repository_api',
+      message: 'GitHub Pages is disabled or not configured for this repository.',
+      evidence: {}
+    });
+  } else {
+    // Pages is enabled
+    if (!r.cname) {
+      findings.push({
+        code: 'pages_enabled_no_custom_domain',
+        category: 'custom_domain',
+        severity: 'info',
+        source: 'github_pages_api',
+        message: 'Pages is enabled under the standard github.io domain, with no custom domain configured.',
+        evidence: {}
+      });
+    } else {
+      // Custom domain is configured
+      if (verificationStateComputed === 'verified') {
+        findings.push({
+          code: 'custom_domain_verified',
+          category: 'custom_domain',
+          severity: 'info',
+          source: 'github_pages_api',
+          message: 'The custom domain ownership has been successfully verified by GitHub.',
+          evidence: { cname: r.cname }
+        });
+      } else if (verificationStateComputed === 'pending') {
+        findings.push({
+          code: 'custom_domain_pending',
+          category: 'custom_domain',
+          severity: 'warning',
+          source: 'github_pages_api',
+          message: 'The custom domain verification is pending.',
+          evidence: { cname: r.cname, pendingUnverifiedAt: r.pendingDomainUnverifiedAt || null }
+        });
+      } else if (verificationStateComputed === 'unverified') {
+        findings.push({
+          code: 'custom_domain_unverified',
+          category: 'custom_domain',
+          severity: 'error',
+          source: 'github_pages_api',
+          message: 'The custom domain is unverified.',
+          evidence: { cname: r.cname }
+        });
+      } else if (verificationStateComputed === 'unknown') {
+        findings.push({
+          code: 'custom_domain_unknown',
+          category: 'custom_domain',
+          severity: 'warning',
+          source: 'app_derived',
+          message: 'The custom domain verification state is unknown.',
+          evidence: { cname: r.cname }
+        });
+      }
+    }
+
+    // HTTPS Checks
     if (r.httpsEnforced === false || r.httpsCertificateStatus === 'https_not_enforced') {
       findings.push({
         code: 'pages_https_not_enforced',
@@ -125,6 +186,59 @@ export function toExportRepositoryRecordV2(r: RepositoryResult): V2AuditReposito
           cname: r.cname,
           https_enforced: false
         }
+      });
+    }
+
+    if (r.httpsCertificateStatus === 'https_certificate_problem_or_unknown' || r.httpsCertificateState === 'errored' || r.httpsCertificateState === 'bad_dns_or_unauthorized') {
+      findings.push({
+        code: 'pages_https_certificate_problem',
+        category: 'https',
+        severity: 'error',
+        source: 'github_pages_api',
+        message: 'We detected a problem or an unauthorized state with the HTTPS SSL certificate configuration.',
+        evidence: {
+          https_certificate_state: r.httpsCertificateState || null,
+          description: r.httpsCertificateDescription || null
+        }
+      });
+    }
+
+    // Deployment Method Checks
+    if (deploymentMethodMapped === 'workflow') {
+      findings.push({
+        code: 'pages_deploy_method_workflow',
+        category: 'deployment',
+        severity: 'info',
+        source: 'github_pages_api',
+        message: 'Pages is deployed via Git Actions Workflow.',
+        evidence: { buildType: r.buildType || null }
+      });
+    } else if (deploymentMethodMapped === 'branch_root') {
+      findings.push({
+        code: 'pages_deploy_method_branch_root',
+        category: 'deployment',
+        severity: 'info',
+        source: 'github_pages_api',
+        message: 'Pages is deployed using a Git branch from "/" root path.',
+        evidence: { branch: r.sourceBranch || null, path: r.sourcePath || null }
+      });
+    } else if (deploymentMethodMapped === 'branch_docs') {
+      findings.push({
+        code: 'pages_deploy_method_branch_docs',
+        category: 'deployment',
+        severity: 'info',
+        source: 'github_pages_api',
+        message: 'Pages is deployed using a Git branch from "/docs" folder.',
+        evidence: { branch: r.sourceBranch || null, path: r.sourcePath || null }
+      });
+    } else if (deploymentMethodMapped === 'unknown' || deploymentMethodMapped === 'branch_unknown_path') {
+      findings.push({
+        code: 'pages_deploy_method_unknown',
+        category: 'deployment',
+        severity: 'warning',
+        source: 'github_pages_api',
+        message: 'The deployment method for this Pages configuration is unknown or unsupported.',
+        evidence: { buildType: r.buildType || null, branch: r.sourceBranch || null }
       });
     }
   }

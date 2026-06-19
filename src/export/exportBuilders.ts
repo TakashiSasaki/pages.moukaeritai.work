@@ -74,6 +74,11 @@ export function toExportRepositoryResult(r: RepositoryResult): ExportRepositoryR
   };
 }
 
+/**
+ * Builds the official V1 JSON audit export.
+ * Accepts only a structured ExportBuildContext to define audit metadata,
+ * with no internal PAT-based token checks or string-inference on parameters.
+ */
 export function buildJsonExport(results: RepositoryResult[], context?: ExportBuildContext): GitHubPagesAuditorExport {
   const pagesEnabledList = results.filter(r => r.hasPages);
   const customDomainList = pagesEnabledList.filter(r => r.cname);
@@ -166,6 +171,11 @@ export function escapeCsvCell(val: any): string {
   return str;
 }
 
+/**
+ * Builds the official CSV audit export.
+ * Accepts only a structured ExportBuildContext to define audit metadata,
+ * with no internal PAT-based token checks or string-inference on parameters.
+ */
 export function buildCsvExport(results: RepositoryResult[], context?: ExportBuildContext): string {
   const headers = [
     'audit_run_id', 'exported_at', 'owner', 'repo', 'full_name', 'repository_top_url', 

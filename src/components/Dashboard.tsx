@@ -80,7 +80,7 @@ const COLUMN_HELP: Record<string, { title: string; description: string; values: 
 };
 
 export default function Dashboard() {
-  const { user, hasStoredPat, getStoredPat } = useAuth();
+  const { user, hasStoredPat, getStoredPat, getStoredTokenType } = useAuth();
   const { auditId } = useParams<{ auditId?: string }>();
   const navigate = useNavigate();
 
@@ -133,11 +133,7 @@ export default function Dashboard() {
     async function determineTokenDetails() {
       if (!user) return;
       try {
-        const pat = await getStoredPat();
-        let derivedTokenType: 'classic' | 'fine_grained' | 'unknown' | null = null;
-        if (pat) {
-          derivedTokenType = pat.startsWith('github_pat_') ? 'fine_grained' : (pat.startsWith('ghp_') ? 'classic' : 'unknown');
-        }
+        const derivedTokenType = await getStoredTokenType();
         
         let login: string | null = null;
         if (results && results.length > 0) {
@@ -163,7 +159,7 @@ export default function Dashboard() {
       }
     }
     determineTokenDetails();
-  }, [user, results, getStoredPat]);
+  }, [user, results, getStoredTokenType]);
 
   const buildContext = useMemo((): ExportBuildContext => {
     return {
@@ -253,6 +249,58 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
   const [domainFilter, setDomainFilter] = useState<'all' | 'custom' | 'none' | 'unverified' | 'pending'>('all');
   const [httpsFilter, setHttpsFilter] = useState<'all' | 'ok' | 'not_enforced' | 'problem'>('all');
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Scroll and dimension tracking states for virtualized rendering of audit list
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [clientHeight, setClientHeight] = useState(600);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setScrollTop(container.scrollTop);
+    };
+
+    const handleResize = () => {
+      setClientHeight(container.clientHeight);
+    };
+
+    // Initialize values
+    setScrollTop(container.scrollTop);
+    setClientHeight(container.clientHeight);
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    const observer = new ResizeObserver(() => {
+      if (container) {
+        setClientHeight(container.clientHeight);
+      }
+    });
+    observer.observe(container);
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      observer.disconnect();
+    };
+  }, [results, activeTab]);
+
+  // Reset scroll to top when page or size changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [currentPage, pageSize]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, domainFilter, httpsFilter]);
 
   // Stats
   const pagesEnabledList = results?.filter(r => r.hasPages) || [];
@@ -481,32 +529,67 @@ export default function Dashboard() {
     }
   }, [activeTab, results]);
 
-  // Filter & Search Logic on the results
-  const filteredResults = results?.filter(r => {
-    // 1. Search Query
-    const matchesSearch = r.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (r.cname && r.cname.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Filter & Search Logic on the results (Memoized to minimize re-renders during full-report generation)
+  const filteredResults = useMemo(() => {
+    return results?.filter(r => {
+      // 1. Search Query
+      const matchesSearch = r.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            (r.cname && r.cname.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // 2. Status Filter
-    const matchesStatus = statusFilter === 'all' || 
-                          (statusFilter === 'enabled' && r.hasPages) || 
-                          (statusFilter === 'disabled' && !r.hasPages);
+      // 2. Status Filter
+      const matchesStatus = statusFilter === 'all' || 
+                            (statusFilter === 'enabled' && r.hasPages) || 
+                            (statusFilter === 'disabled' && !r.hasPages);
 
-    // 3. Domain Filter
-    const matchesDomain = domainFilter === 'all' ||
-                          (domainFilter === 'custom' && r.cname) ||
-                          (domainFilter === 'none' && !r.cname && r.hasPages) ||
-                          (domainFilter === 'unverified' && r.customDomainStatus === 'custom_domain_unverified_or_unknown') ||
-                          (domainFilter === 'pending' && r.customDomainStatus === 'custom_domain_pending');
+      // 3. Domain Filter
+      const matchesDomain = domainFilter === 'all' ||
+                            (domainFilter === 'custom' && r.cname) ||
+                            (domainFilter === 'none' && !r.cname && r.hasPages) ||
+                            (domainFilter === 'unverified' && r.customDomainStatus === 'custom_domain_unverified_or_unknown') ||
+                            (domainFilter === 'pending' && r.customDomainStatus === 'custom_domain_pending');
 
-    // 4. HTTPS Filter
-    const matchesHttps = httpsFilter === 'all' ||
-                         (httpsFilter === 'ok' && r.httpsCertificateStatus === 'https_certificate_ok') ||
-                         (httpsFilter === 'not_enforced' && r.httpsCertificateStatus === 'https_not_enforced') ||
-                         (httpsFilter === 'problem' && r.httpsCertificateStatus === 'https_certificate_problem_or_unknown');
+      // 4. HTTPS Filter
+      const matchesHttps = httpsFilter === 'all' ||
+                           (httpsFilter === 'ok' && r.httpsCertificateStatus === 'https_certificate_ok') ||
+                           (httpsFilter === 'not_enforced' && r.httpsCertificateStatus === 'https_not_enforced') ||
+                           (httpsFilter === 'problem' && r.httpsCertificateStatus === 'https_certificate_problem_or_unknown');
 
-    return matchesSearch && matchesStatus && matchesDomain && matchesHttps;
-  }) || [];
+      return matchesSearch && matchesStatus && matchesDomain && matchesHttps;
+    }) || [];
+  }, [results, searchQuery, statusFilter, domainFilter, httpsFilter]);
+
+  // Paginated Results to boost initial rendering speed for large datasets
+  const paginatedResults = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredResults.slice(startIndex, startIndex + pageSize);
+  }, [filteredResults, currentPage, pageSize]);
+
+  // Total pages calculation
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredResults.length / pageSize));
+  }, [filteredResults, pageSize]);
+
+  // Virtualized list parameters & visible slice to support rendering thousands of items smoothly
+  const ROW_HEIGHT = 54;
+  const { startIndex, visibleResults, topPadding, bottomPadding } = useMemo(() => {
+    const totalItems = paginatedResults.length;
+    const totalHeight = totalItems * ROW_HEIGHT;
+    
+    // 3 rows buffer above/below to prevent visual flicker during fast scrolling
+    const startIdx = Math.max(0, Math.floor((scrollTop - ROW_HEIGHT * 3) / ROW_HEIGHT));
+    const endIdx = Math.min(totalItems - 1, Math.ceil((scrollTop + clientHeight + ROW_HEIGHT * 3) / ROW_HEIGHT));
+    
+    const visible = paginatedResults.slice(startIdx, endIdx + 1);
+    const topPad = startIdx * ROW_HEIGHT;
+    const bottomPad = Math.max(0, totalHeight - (endIdx + 1) * ROW_HEIGHT);
+    
+    return {
+      startIndex: startIdx,
+      visibleResults: visible,
+      topPadding: topPad,
+      bottomPadding: bottomPad
+    };
+  }, [paginatedResults, scrollTop, clientHeight]);
 
   const formattedTime = (() => {
     if (!auditCreatedAt) return null;
@@ -954,10 +1037,10 @@ export default function Dashboard() {
                   <button 
                     onClick={exportJsonV2} 
                     className="flex-1 md:flex-initial px-4 py-2 bg-white text-slate-800 rounded-lg hover:bg-slate-50 flex items-center justify-center border border-slate-200 shadow-2xs text-xs font-semibold hover:border-slate-300 transition-colors cursor-pointer"
-                    title="ネストされたJSON v2 構造のドラフト版をダウンロード"
+                    title="ネストされたJSON v2 構造のインターチェンジドラフト版をダウンロード"
                   >
                     <Download className="w-3.5 h-3.5 mr-2 text-slate-400" />
-                    JSON v2 (ドラフト)
+                    JSON V2 (Interchange Draft)
                   </button>
                 </div>
               </div>
@@ -967,10 +1050,10 @@ export default function Dashboard() {
           {activeTab === 'details' && (
             <>
           {/* Results Table view - Seamless Flat High-Density Layout */}
-          <div className="flex-1 overflow-auto border-b border-gray-200 bg-white mt-1 animate-fade-in relative">
+          <div ref={scrollContainerRef} className="flex-1 overflow-auto border-b border-gray-200 bg-white mt-1 animate-fade-in relative">
             <div className="min-h-full">
               {results && (
-                <div className="sticky top-0 left-0 right-0 z-30 px-3 py-1.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-gray-500 font-mono text-[10px]">
+                <div className="px-3 py-1.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-gray-500 font-mono text-[10px]">
                   <span className="flex items-center gap-1.5 font-sans font-medium text-slate-700">
                     <Filter className="w-3.5 h-3.5 text-slate-500" />
                     カラム別フィルタリング
@@ -983,10 +1066,10 @@ export default function Dashboard() {
               <table className="min-w-[960px] w-full divide-y divide-gray-200 font-sans text-xs border-separate border-spacing-0">
                 <thead className="bg-slate-50 font-mono">
                   <tr>
-                    <th scope="col" className="sticky top-0 left-0 z-50 bg-slate-50 px-2 py-2 text-center font-bold text-slate-400 uppercase text-[10px] w-10 border-r border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
+                    <th scope="col" className="sticky top-0 z-50 bg-slate-50 px-2 py-2 text-center font-bold text-slate-400 uppercase text-[10px] w-10 border-r border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
                       #
                     </th>
-                    <th scope="col" className="sticky top-0 left-10 z-50 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider text-[11px] border-r border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
+                    <th scope="col" className="sticky top-0 z-50 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider text-[11px] border-r border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
                       <div className="flex items-center gap-1">
                         Repository
                         <button onClick={() => setColumnGuideModal('repository')} className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors" title="View details">
@@ -1030,7 +1113,7 @@ export default function Dashboard() {
                   </tr>
                   {/* カラムヘッダ名の直下に配置するフィルタリングUI行 */}
                   <tr className="bg-slate-100/75">
-                    <th scope="col" className="sticky top-[29px] left-0 z-50 bg-slate-100/95 px-1 py-1 border-r border-b border-slate-200 text-center">
+                    <th scope="col" className="sticky top-[31px] z-40 bg-slate-100/95 px-1 py-1 border-r border-b border-slate-200 text-center">
                       <button 
                         onClick={() => {
                           setSearchQuery('');
@@ -1045,7 +1128,7 @@ export default function Dashboard() {
                         Reset
                       </button>
                     </th>
-                    <th scope="col" className="sticky top-[29px] left-10 z-50 bg-slate-100/95 px-2 py-1 border-r border-b border-slate-200 text-left">
+                    <th scope="col" className="sticky top-[31px] z-40 bg-slate-100/95 px-2 py-1 border-r border-b border-slate-200 text-left">
                       <div className="relative">
                         <Search className="w-3 h-3 text-slate-400 absolute left-2 top-1.5" />
                         <input 
@@ -1057,7 +1140,7 @@ export default function Dashboard() {
                         />
                       </div>
                     </th>
-                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left">
+                    <th scope="col" className="sticky top-[31px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left">
                       <select 
                         className="w-full bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-sans font-normal outline-none focus:border-slate-800"
                         value={statusFilter}
@@ -1068,10 +1151,10 @@ export default function Dashboard() {
                         <option value="disabled">Disabled</option>
                       </select>
                     </th>
-                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left text-slate-400 italic font-sans font-normal text-[10px] text-center">
+                    <th scope="col" className="sticky top-[31px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left text-slate-400 italic font-sans font-normal text-[10px] text-center">
                       —
                     </th>
-                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left">
+                    <th scope="col" className="sticky top-[31px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left">
                       <select 
                         className="w-full bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-sans font-normal outline-none focus:border-slate-800"
                         value={domainFilter}
@@ -1084,7 +1167,7 @@ export default function Dashboard() {
                         <option value="pending">Pending Verif.</option>
                       </select>
                     </th>
-                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left">
+                    <th scope="col" className="sticky top-[31px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-left">
                       <select 
                         className="w-full bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-sans font-normal outline-none focus:border-slate-800"
                         value={httpsFilter}
@@ -1096,14 +1179,14 @@ export default function Dashboard() {
                         <option value="problem">Problem/Unknown</option>
                       </select>
                     </th>
-                    <th scope="col" className="sticky top-[29px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-right font-normal">
+                    <th scope="col" className="sticky top-[31px] z-40 bg-slate-100/95 px-2 py-1 border-b border-slate-200 text-right font-normal">
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100 font-mono text-xs">
                   {filteredResults.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-3 py-6 text-center text-gray-500 bg-gray-25">
+                      <td colSpan={7} className="px-3 py-6 text-center text-gray-500 bg-gray-25">
                         <div className="max-w-md mx-auto space-y-2 text-center">
                           <AlertCircle className="w-6 h-6 text-gray-300 mx-auto" />
                           <p className="font-medium text-slate-800 text-xs">No matching repositories found</p>
@@ -1112,163 +1195,104 @@ export default function Dashboard() {
                       </td>
                     </tr>
                   ) : (
-                    filteredResults.map((repo, index) => (
-                      <tr key={repo.id} className="hover:bg-slate-25/50 transition-colors group">
-                        
-                        {/* Serial Number - Sticky Column */}
-                        <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50/90 px-2 py-2 text-center text-[10px] text-slate-400 font-mono border-r border-slate-100 transition-colors w-10">
-                          {index + 1}
-                        </td>
-
-                        {/* Repository name with fork badge - Sticky Column */}
-                        <td className="sticky left-10 z-10 bg-white group-hover:bg-slate-50/90 px-3 py-2 sm:py-2.5 min-w-[200px] border-r border-slate-200 transition-colors">
-                          <div className="flex flex-col whitespace-normal">
-                            <a href={repo.htmlUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-start gap-1 font-sans" title={repo.fullName}>
-                              <span className="leading-tight block break-all">{repo.repoName}</span>
-                              <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 opacity-70 mt-1" />
-                            </a>
-                            <div className="flex items-center space-x-1.5 mt-0.5">
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider leading-none ${repo.visibility === 'public' ? 'bg-sky-50 text-sky-700 border border-sky-150' : 'bg-amber-50 text-amber-700 border border-amber-150'}`}>
-                                {repo.visibility}
-                              </span>
-                              {repo.isFork && (
-                                <span className="px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider leading-none bg-slate-100 text-slate-500 border border-slate-200">
-                                  Fork
-                                </span>
-                              )}
-                              {repo.archived && (
-                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider leading-none bg-orange-50 text-orange-600 border border-orange-150">
-                                  Archived
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Pages Status badge */}
-                        <td className="px-3 py-2 sm:py-2.5 whitespace-nowrap">
-                          {repo.hasPages ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-150">
-                              <span className="w-1 h-1 bg-emerald-500 rounded-full mr-1 animate-pulse"></span>
-                              Active ({repo.pagesStatus || 'configured'})
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-50 text-gray-550 border border-gray-200">
-                              <span className="w-1 h-1 bg-gray-300 rounded-full mr-1"></span>
-                              Disabled
-                            </span>
-                          )}
-                          {repo.errorClassification && (
-                            <div className="text-[9px] text-red-500 mt-0.5 flex items-center gap-1 font-sans">
-                              <AlertCircle className="w-2.5 h-2.5 text-red-400 flex-shrink-0" />
-                              <span>{repo.errorClassification}</span>
-                            </div>
-                          )}
-                        </td>
-
-                        {/* Deployment method & publishing branch */}
-                        <td className="px-3 py-2 sm:py-2.5 whitespace-nowrap">
-                          {repo.hasPages ? (
-                            <div className="space-y-0.5">
-                              <div className="flex items-center text-gray-750 text-xs gap-1">
-                                <GitBranch className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                                <span className="font-sans font-medium">{repo.deploymentMethod}</span>
-                              </div>
-                              {repo.publishingSourceSummary && (
-                                <div className="text-[9px] text-gray-400 select-all font-mono">
-                                  {repo.publishingSourceSummary}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-
-                        {/* Custom Domain and Verification Status */}
-                        <td className="px-3 py-2 sm:py-2.5 whitespace-nowrap">
-                          {repo.cname ? (
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-1.5 text-gray-800 font-sans leading-none">
-                                <Globe className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                                <span className="font-semibold text-xs">{repo.cname}</span>
-                              </div>
-                              
-                              {/* Better colored domain statuses */}
-                              {repo.customDomainStatus === 'custom_domain_verified' ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider leading-none uppercase bg-green-50 text-green-700 border border-green-150">
-                                  Verified
-                                </span>
-                              ) : repo.customDomainStatus === 'custom_domain_pending' ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider leading-none uppercase bg-amber-50 text-amber-700 border border-amber-150">
-                                  Pending Verification
-                                </span>
-                              ) : (
-                                <span 
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium tracking-wide leading-none bg-blue-50 text-blue-700 border border-blue-105 cursor-help"
-                                  title="カスタムドメイン（CNAME）が設定されています。GitHubの「ドメイン所有権検証」機能が未設定のためAPI上はUnverified/Unknownとなっていますが、HTTPS証明書が承認されていれば安全に動作しています。"
-                                >
-                                  Configured
-                                </span>
-                              )}
-                            </div>
-                          ) : repo.hasPages ? (
-                            <span className="text-[11px] text-gray-400 font-normal font-sans">GitHub standard URL</span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-
-                        {/* HTTPS and Enforcement */}
-                        <td className="px-3 py-2 sm:py-2.5 whitespace-nowrap text-gray-500">
-                          {repo.hasPages ? (
-                            <div className="space-y-0.5">
-                              {repo.httpsCertificateStatus === 'https_certificate_ok' ? (
-                                <div className="flex items-center gap-1 text-emerald-700 text-xs font-sans">
-                                  <Lock className="w-3 h-3 text-emerald-500" />
-                                  <span>HTTPS Enforced & SSL OK</span>
-                                </div>
-                              ) : repo.httpsCertificateStatus === 'https_not_enforced' ? (
-                                <div className="flex items-center gap-1 text-amber-605 text-xs font-sans">
-                                  <UnlockWarningIcon className="w-3 h-3 text-amber-500" />
-                                  <span>Approved but Not Enforced</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1 text-red-650 text-xs font-sans">
-                                  <AlertCircle className="w-3 h-3 text-red-500" />
-                                  <span>SSL Configuration Issue</span>
-                                </div>
-                              )}
-                              
-                              {repo.httpsCertificateState && (
-                                <div className="text-[9px] text-gray-450 font-sans">
-                                  Cert status: <span className="font-mono text-gray-550 select-all">{repo.httpsCertificateState}</span>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-
-                        {/* Link to settings */}
-                        <td className="px-3 py-2 sm:py-2.5 whitespace-nowrap text-right font-medium">
-                          <a 
-                            href={repo.pagesSettingsUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="inline-flex items-center text-[11px] text-slate-800 bg-slate-50 hover:bg-slate-100 hover:text-slate-900 px-2 py-1 rounded-md border border-slate-200 font-sans shadow-3xs cursor-pointer transition-colors"
-                          >
-                            <Settings className="w-2.5 h-2.5 mr-1" />
-                            Settings
-                          </a>
-                        </td>
-                      </tr>
-                    ))
+                    <>
+                      {topPadding > 0 && (
+                        <tr>
+                          <td colSpan={7} style={{ height: `${topPadding}px`, padding: 0 }} className="border-0 bg-transparent" />
+                        </tr>
+                      )}
+                      {visibleResults.map((repo, index) => (
+                        <RepoRow 
+                          key={repo.id} 
+                          repo={repo} 
+                          serialNumber={(currentPage - 1) * pageSize + startIndex + index + 1} 
+                        />
+                      ))}
+                      {bottomPadding > 0 && (
+                        <tr>
+                          <td colSpan={7} style={{ height: `${bottomPadding}px`, padding: 0 }} className="border-0 bg-transparent" />
+                        </tr>
+                      )}
+                    </>
                   )}
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="py-2.5 px-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 font-sans">
+            <div className="flex items-center gap-2">
+              <span>ページごとの表示数:</span>
+              <select
+                value={pageSize === 100000 ? 'all' : pageSize}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const newSize = val === 'all' ? 100000 : Number(val);
+                  setPageSize(newSize);
+                  setCurrentPage(1);
+                }}
+                className="bg-white border border-slate-200 rounded px-2 py-1 text-slate-700 outline-none focus:border-slate-800 text-xs font-semibold"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={250}>250</option>
+                <option value="all">すべて</option>
+              </select>
+              <span className="text-slate-400">|</span>
+              <span>
+                {filteredResults.length > 0 ? (
+                  <>
+                    全 <strong>{filteredResults.length}</strong> 件中 <strong>{(currentPage - 1) * pageSize + 1}</strong> - <strong>{Math.min(currentPage * pageSize, filteredResults.length)}</strong> 件を表示
+                  </>
+                ) : (
+                  '該当するリポジトリはありません'
+                )}
+              </span>
+            </div>
+            
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5 font-sans">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 border border-slate-200 rounded bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white text-xs font-semibold transition-colors cursor-pointer"
+                  title="最初"
+                >
+                  &laquo;
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-2.5 py-1 border border-slate-200 rounded bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white text-xs font-semibold transition-colors cursor-pointer"
+                  title="戻る"
+                >
+                  前へ
+                </button>
+
+                <span className="text-slate-500 mx-1 font-mono text-[11px]">
+                  ページ <strong>{currentPage}</strong> / <strong>{totalPages}</strong>
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-2.5 py-1 border border-slate-200 rounded bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white text-xs font-semibold transition-colors cursor-pointer"
+                  title="次へ"
+                >
+                  次へ
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 border border-slate-200 rounded bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white text-xs font-semibold transition-colors cursor-pointer"
+                  title="最後"
+                >
+                  &raquo;
+                </button>
+              </div>
+            )}
           </div>
           </>
           )}
@@ -1380,27 +1404,27 @@ export default function Dashboard() {
 
       {/* Column Guide Modal */}
       {columnGuideModal && COLUMN_HELP[columnGuideModal] && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200 flex flex-col">
             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="text-lg font-semibold tracking-tight text-slate-900">
+              <h3 className="text-lg font-semibold tracking-tight text-slate-900 font-sans">
                 {COLUMN_HELP[columnGuideModal].title}
               </h3>
               <button
                 onClick={() => setColumnGuideModal(null)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
+                className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto">
-              <p className="text-sm text-slate-700 leading-relaxed mb-6">
+            <div className="p-6 overflow-y-auto max-h-[400px]">
+              <p className="text-sm text-slate-700 leading-relaxed mb-6 font-sans">
                 {COLUMN_HELP[columnGuideModal].description}
               </p>
               
               {COLUMN_HELP[columnGuideModal].values.length > 0 && (
                 <div className="space-y-4">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Possible Values</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-sans">Possible Values</h4>
                   <ul className="space-y-4">
                     {COLUMN_HELP[columnGuideModal].values.map((val, i) => (
                       <li key={i} className="flex gap-3 text-sm">
@@ -1411,7 +1435,7 @@ export default function Dashboard() {
                           <span className="font-mono text-xs font-semibold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded mr-2 break-all">
                             {val.label}
                           </span>
-                          <span className="text-slate-600 text-sm">{val.desc}</span>
+                          <span className="text-slate-600 text-sm font-sans">{val.desc}</span>
                         </div>
                       </li>
                     ))}
@@ -1422,7 +1446,7 @@ export default function Dashboard() {
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setColumnGuideModal(null)}
-                className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer"
+                className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-705 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -1484,6 +1508,173 @@ function CopyButton({ text }: { text: string }) {
     </button>
   );
 }
+
+const RepoRow = React.memo(({ repo, serialNumber, style }: { repo: RepositoryResult; serialNumber: number; style?: React.CSSProperties }) => {
+  return (
+    <tr style={style} className="hover:bg-slate-50 border-b border-slate-100 transition-colors group">
+      
+      {/* Serial Number */}
+      <td className="w-10 text-center text-[10px] text-slate-400 font-mono p-2 border-r border-slate-100 align-middle">
+        {serialNumber}
+      </td>
+
+      {/* Repository name with fork badge */}
+      <td className="px-3 py-2 border-r border-slate-100 align-middle">
+        <div className="flex flex-col whitespace-normal font-sans">
+          <a href={repo.htmlUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-start gap-1 text-xs" title={repo.fullName}>
+            <span className="leading-tight block truncate max-w-[200px] sm:max-w-xs">{repo.repoName}</span>
+            <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 opacity-70 mt-0.5" />
+          </a>
+          <div className="flex items-center space-x-1.5 mt-0.5">
+            <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider leading-none ${repo.visibility === 'public' ? 'bg-sky-50 text-sky-700 border border-sky-150' : 'bg-amber-50 text-amber-700 border border-amber-150'}`}>
+              {repo.visibility}
+            </span>
+            {repo.isFork && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider leading-none bg-slate-100 text-slate-500 border border-slate-200">
+                Fork
+              </span>
+            )}
+            {repo.archived && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider leading-none bg-orange-50 text-orange-600 border border-orange-150">
+                Archived
+              </span>
+            )}
+          </div>
+        </div>
+      </td>
+
+      {/* Pages Status badge */}
+      <td className="px-3 py-2 align-middle border-r border-slate-50">
+        <div className="flex flex-col">
+          <div>
+            {repo.hasPages ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-150 font-sans">
+                <span className="w-1 h-1 bg-emerald-500 rounded-full mr-1 animate-pulse"></span>
+                Active ({repo.pagesStatus || 'configured'})
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-50 text-gray-550 border border-gray-200 font-sans">
+                <span className="w-1 h-1 bg-gray-300 rounded-full mr-1"></span>
+                Disabled
+              </span>
+            )}
+          </div>
+          {repo.errorClassification && (
+            <div className="text-[9px] text-red-500 mt-0.5 flex items-center gap-1 font-sans truncate max-w-full">
+              <AlertCircle className="w-2.5 h-2.5 text-red-400 flex-shrink-0" />
+              <span className="truncate">{repo.errorClassification}</span>
+            </div>
+          )}
+        </div>
+      </td>
+
+      {/* Deployment method & publishing branch */}
+      <td className="px-3 py-2 align-middle border-r border-slate-50">
+        <div className="flex flex-col">
+          {repo.hasPages ? (
+            <div className="space-y-0.5">
+              <div className="flex items-center text-gray-750 text-xs gap-1">
+                <GitBranch className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                <span className="font-sans font-medium">{repo.deploymentMethod}</span>
+              </div>
+              {repo.publishingSourceSummary && (
+                <div className="text-[9px] text-gray-400 select-all font-mono truncate">
+                  {repo.publishingSourceSummary}
+                </div>
+              )}
+            </div>
+          ) : (
+            <span className="text-gray-400">-</span>
+          )}
+        </div>
+      </td>
+
+      {/* Custom Domain and Verification Status */}
+      <td className="px-3 py-2 align-middle border-r border-slate-50">
+        <div className="flex flex-col">
+          {repo.cname ? (
+            <div className="space-y-0.5 max-w-full overflow-hidden">
+              <div className="flex items-center gap-1.5 text-gray-800 font-sans leading-none min-w-0">
+                <Globe className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                <span className="font-semibold text-xs truncate max-w-[150px]">{repo.cname}</span>
+              </div>
+              
+              {repo.customDomainStatus === 'custom_domain_verified' ? (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider leading-none uppercase bg-green-50 text-green-700 border border-green-150 font-sans">
+                  Verified
+                </span>
+              ) : repo.customDomainStatus === 'custom_domain_pending' ? (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider leading-none uppercase bg-amber-50 text-amber-700 border border-amber-150 font-sans">
+                  Pending Verification
+                </span>
+              ) : (
+                <span 
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium tracking-wide leading-none bg-blue-50 text-blue-700 border border-blue-105 cursor-help font-sans"
+                  title="カスタムドメイン（CNAME）が設定されています。GitHubの「ドメイン所有権検証」機能が未設定のためAPI上はUnverified/Unknownとなっていますが、HTTPS証明書が承認されていれば安全に動作しています。"
+                >
+                  Configured
+                </span>
+              )}
+            </div>
+          ) : repo.hasPages ? (
+            <span className="text-[11px] text-gray-400 font-normal font-sans">GitHub standard URL</span>
+          ) : (
+            <span className="text-gray-400">-</span>
+          )}
+        </div>
+      </td>
+
+      {/* HTTPS and Enforcement */}
+      <td className="px-3 py-2 align-middle text-gray-500">
+        <div className="flex flex-col">
+          {repo.hasPages ? (
+            <div className="space-y-0.5">
+              {repo.httpsCertificateStatus === 'https_certificate_ok' ? (
+                <div className="flex items-center gap-1 text-emerald-700 text-xs font-sans">
+                  <Lock className="w-3 h-3 text-emerald-500" />
+                  <span>HTTPS Enforced & SSL OK</span>
+                </div>
+              ) : repo.httpsCertificateStatus === 'https_not_enforced' ? (
+                <div className="flex items-center gap-1 text-amber-605 text-xs font-sans">
+                  <UnlockWarningIcon className="w-3 h-3 text-amber-500" />
+                  <span>Approved but Not Enforced</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 text-red-650 text-xs font-sans">
+                  <AlertCircle className="w-3 h-3 text-red-500" />
+                  <span>SSL Configuration Issue</span>
+                </div>
+              )}
+              
+              {repo.httpsCertificateState && (
+                <div className="text-[9px] text-gray-450 font-sans truncate">
+                  Cert status: <span className="font-mono text-gray-550 select-all truncate max-w-[120px] inline-block align-bottom">{repo.httpsCertificateState}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <span className="text-gray-400">-</span>
+          )}
+        </div>
+      </td>
+
+      {/* Link to settings */}
+      <td className="px-3 py-2 text-right font-medium align-middle">
+        <a 
+          href={repo.pagesSettingsUrl} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center text-[11px] text-slate-800 bg-slate-50 hover:bg-slate-100 hover:text-slate-900 px-2 py-1 rounded-md border border-slate-200 font-sans shadow-3xs cursor-pointer transition-colors"
+        >
+          <Settings className="w-2.5 h-2.5 mr-1" />
+          Settings
+        </a>
+      </td>
+    </tr>
+  );
+});
+
+RepoRow.displayName = 'RepoRow';
 
 interface VirtualizedCodeViewerProps {
   code: string;

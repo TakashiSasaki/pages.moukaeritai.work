@@ -1,0 +1,455 @@
+{
+  "schemaVersion": "github-pages-auditor.export.v2",
+  "schemaId": "urn:uuid:7d0f98be-8cba-49c5-84dc-66914b5da3f2",
+  "exportedAt": "2026-06-19T04:05:00Z",
+  "application": {
+    "name": "GitHub Pages Auditor",
+    "version": "1.2.0",
+    "environment": "production"
+  },
+  "auditRun": {
+    "id": "sample-audit-run-id",
+    "status": "completed",
+    "startedAt": "2026-06-19T04:00:00Z",
+    "finishedAt": "2026-06-19T04:00:00Z",
+    "tokenType": "fine_grained",
+    "githubLogin": "TakashiSasaki",
+    "options": {
+      "affiliation": "owner,collaborator,organization_member",
+      "visibility": "all",
+      "includeArchived": true,
+      "includeDisabled": true,
+      "strictPagesCheck": false,
+      "includeHealthCheck": false,
+      "ownerFilter": null
+    },
+    "userMode": "google"
+  },
+  "summary": {
+    "repositoryCount": 5,
+    "pagesEnabledCount": 4,
+    "customDomainCount": 3,
+    "customDomainVerifiedCount": 2,
+    "customDomainUnverifiedOrUnknownCount": 0,
+    "httpsProblemCount": 2,
+    "dnsHealthProblemCount": 0,
+    "errorCount": 0,
+    "deploymentWorkflowCount": 2,
+    "deploymentBranchRootCount": 1,
+    "deploymentBranchDocsCount": 1,
+    "deploymentUnknownCount": 0,
+    "httpsNotEnforcedCount": 1,
+    "approvedCertButHttpsNotEnforcedCount": 1,
+    "customDomainHttpsNotEnforcedCount": 1
+  },
+  "repositories": [
+    {
+      "repository": {
+        "githubId": "101",
+        "githubIdNumber": 101,
+        "ownerLogin": "TakashiSasaki",
+        "name": "disabled-pages-repo",
+        "fullName": "TakashiSasaki/disabled-pages-repo",
+        "htmlUrl": "https://github.com/TakashiSasaki/disabled-pages-repo",
+        "visibility": "public",
+        "isPrivate": false,
+        "isArchived": false,
+        "isDisabled": false,
+        "isFork": false,
+        "defaultBranch": "main",
+        "githubHasPagesRaw": false,
+        "createdAt": "2026-06-19T00:00:00Z",
+        "updatedAt": "2026-06-19T12:00:00Z",
+        "pushedAt": "2026-06-19T18:00:00Z"
+      },
+      "pages": {
+        "enabled": false,
+        "statusRaw": null,
+        "htmlUrl": null,
+        "settingsUrl": "https://github.com/TakashiSasaki/disabled-pages-repo/settings/pages",
+        "publicRaw": null,
+        "deployment": {
+          "method": "not_applicable",
+          "githubBuildTypeRaw": null,
+          "sourceBranch": null,
+          "sourcePath": null,
+          "displaySummary": null
+        },
+        "customDomain": {
+          "configured": false,
+          "cnameRaw": null,
+          "hostname": null,
+          "githubProtectedDomainStateRaw": null,
+          "verificationState": "not_applicable",
+          "pendingUnverifiedAt": null,
+          "stateSource": "not_reported"
+        },
+        "https": {
+          "enforced": null,
+          "certificate": {
+            "stateRaw": null,
+            "description": null,
+            "domains": [],
+            "expiresAt": null
+          }
+        },
+        "healthCheck": {
+          "requested": false,
+          "status": null
+        }
+      },
+      "findings": [
+        {
+          "code": "pages_disabled",
+          "category": "pages",
+          "severity": "info",
+          "source": "github_repository_api",
+          "message": "GitHub Pages is disabled or not configured for this repository.",
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "repository": {
+        "githubId": "102",
+        "githubIdNumber": 102,
+        "ownerLogin": "TakashiSasaki",
+        "name": "no-custom-domain",
+        "fullName": "TakashiSasaki/no-custom-domain",
+        "htmlUrl": "https://github.com/TakashiSasaki/no-custom-domain",
+        "visibility": "public",
+        "isPrivate": false,
+        "isArchived": false,
+        "isDisabled": false,
+        "isFork": false,
+        "defaultBranch": "main",
+        "githubHasPagesRaw": true,
+        "createdAt": "2026-06-19T00:00:00Z",
+        "updatedAt": "2026-06-19T12:00:00Z",
+        "pushedAt": "2026-06-19T18:00:00Z"
+      },
+      "pages": {
+        "enabled": true,
+        "statusRaw": "built",
+        "htmlUrl": "https://takashisasaki.github.io/no-custom-domain/",
+        "settingsUrl": "https://github.com/TakashiSasaki/no-custom-domain/settings/pages",
+        "publicRaw": null,
+        "deployment": {
+          "method": "workflow",
+          "githubBuildTypeRaw": "workflow",
+          "sourceBranch": null,
+          "sourcePath": null,
+          "displaySummary": "GitHub Actions workflow"
+        },
+        "customDomain": {
+          "configured": false,
+          "cnameRaw": null,
+          "hostname": null,
+          "githubProtectedDomainStateRaw": "none",
+          "verificationState": "not_applicable",
+          "pendingUnverifiedAt": null,
+          "stateSource": "not_reported"
+        },
+        "https": {
+          "enforced": true,
+          "certificate": {
+            "stateRaw": "approved",
+            "description": "Certificate is secure",
+            "domains": [
+              "takashisasaki.github.io"
+            ],
+            "expiresAt": "2026-12-31T23:59:59Z"
+          }
+        },
+        "healthCheck": {
+          "requested": false,
+          "status": null
+        }
+      },
+      "findings": [
+        {
+          "code": "pages_enabled_no_custom_domain",
+          "category": "custom_domain",
+          "severity": "info",
+          "source": "github_pages_api",
+          "message": "Pages is enabled under the standard github.io domain, with no custom domain configured.",
+          "evidence": {}
+        },
+        {
+          "code": "pages_deploy_method_workflow",
+          "category": "deployment",
+          "severity": "info",
+          "source": "github_pages_api",
+          "message": "Pages is deployed via Git Actions Workflow.",
+          "evidence": {
+            "buildType": "workflow"
+          }
+        }
+      ]
+    },
+    {
+      "repository": {
+        "githubId": "103",
+        "githubIdNumber": 103,
+        "ownerLogin": "TakashiSasaki",
+        "name": "custom-domain-blank-protected",
+        "fullName": "TakashiSasaki/custom-domain-blank-protected",
+        "htmlUrl": "https://github.com/TakashiSasaki/custom-domain-blank-protected",
+        "visibility": "public",
+        "isPrivate": false,
+        "isArchived": false,
+        "isDisabled": false,
+        "isFork": false,
+        "defaultBranch": "main",
+        "githubHasPagesRaw": true,
+        "createdAt": "2026-06-19T00:00:00Z",
+        "updatedAt": "2026-06-19T12:00:00Z",
+        "pushedAt": "2026-06-19T18:00:00Z"
+      },
+      "pages": {
+        "enabled": true,
+        "statusRaw": "built",
+        "htmlUrl": "https://audit.customdomain-blank.com/",
+        "settingsUrl": "https://github.com/TakashiSasaki/custom-domain-blank-protected/settings/pages",
+        "publicRaw": null,
+        "deployment": {
+          "method": "workflow",
+          "githubBuildTypeRaw": "workflow",
+          "sourceBranch": null,
+          "sourcePath": null,
+          "displaySummary": "GitHub Actions workflow"
+        },
+        "customDomain": {
+          "configured": true,
+          "cnameRaw": "audit.customdomain-blank.com",
+          "hostname": "audit.customdomain-blank.com",
+          "githubProtectedDomainStateRaw": null,
+          "verificationState": "unknown",
+          "pendingUnverifiedAt": null,
+          "stateSource": "derived"
+        },
+        "https": {
+          "enforced": true,
+          "certificate": {
+            "stateRaw": "approved",
+            "description": "Certificate is secure",
+            "domains": [
+              "audit.customdomain-blank.com"
+            ],
+            "expiresAt": "2026-12-31T23:59:59Z"
+          }
+        },
+        "healthCheck": {
+          "requested": false,
+          "status": null
+        }
+      },
+      "findings": [
+        {
+          "code": "custom_domain_unknown",
+          "category": "custom_domain",
+          "severity": "warning",
+          "source": "app_derived",
+          "message": "The custom domain verification state is unknown.",
+          "evidence": {
+            "cname": "audit.customdomain-blank.com"
+          }
+        },
+        {
+          "code": "pages_deploy_method_workflow",
+          "category": "deployment",
+          "severity": "info",
+          "source": "github_pages_api",
+          "message": "Pages is deployed via Git Actions Workflow.",
+          "evidence": {
+            "buildType": "workflow"
+          }
+        }
+      ]
+    },
+    {
+      "repository": {
+        "githubId": "104",
+        "githubIdNumber": 104,
+        "ownerLogin": "TakashiSasaki",
+        "name": "custom-domain-enforced",
+        "fullName": "TakashiSasaki/custom-domain-enforced",
+        "htmlUrl": "https://github.com/TakashiSasaki/custom-domain-enforced",
+        "visibility": "public",
+        "isPrivate": false,
+        "isArchived": false,
+        "isDisabled": false,
+        "isFork": false,
+        "defaultBranch": "main",
+        "githubHasPagesRaw": true,
+        "createdAt": "2026-06-19T00:00:00Z",
+        "updatedAt": "2026-06-19T12:00:00Z",
+        "pushedAt": "2026-06-19T18:00:00Z"
+      },
+      "pages": {
+        "enabled": true,
+        "statusRaw": "built",
+        "htmlUrl": "https://enforced.com/",
+        "settingsUrl": "https://github.com/TakashiSasaki/custom-domain-enforced/settings/pages",
+        "publicRaw": null,
+        "deployment": {
+          "method": "branch_root",
+          "githubBuildTypeRaw": "legacy",
+          "sourceBranch": "main",
+          "sourcePath": "/",
+          "displaySummary": "main:/"
+        },
+        "customDomain": {
+          "configured": true,
+          "cnameRaw": "enforced.com",
+          "hostname": "enforced.com",
+          "githubProtectedDomainStateRaw": "verified",
+          "verificationState": "verified",
+          "pendingUnverifiedAt": null,
+          "stateSource": "github_pages_api"
+        },
+        "https": {
+          "enforced": true,
+          "certificate": {
+            "stateRaw": "approved",
+            "description": "Certificate is safe",
+            "domains": [
+              "enforced.com"
+            ],
+            "expiresAt": "2026-12-31T23:59:59Z"
+          }
+        },
+        "healthCheck": {
+          "requested": false,
+          "status": null
+        }
+      },
+      "findings": [
+        {
+          "code": "custom_domain_verified",
+          "category": "custom_domain",
+          "severity": "info",
+          "source": "github_pages_api",
+          "message": "The custom domain ownership has been successfully verified by GitHub.",
+          "evidence": {
+            "cname": "enforced.com"
+          }
+        },
+        {
+          "code": "pages_deploy_method_branch_root",
+          "category": "deployment",
+          "severity": "info",
+          "source": "github_pages_api",
+          "message": "Pages is deployed using a Git branch from \"/\" root path.",
+          "evidence": {
+            "branch": "main",
+            "path": "/"
+          }
+        }
+      ]
+    },
+    {
+      "repository": {
+        "githubId": "105",
+        "githubIdNumber": 105,
+        "ownerLogin": "TakashiSasaki",
+        "name": "custom-domain-unenforced",
+        "fullName": "TakashiSasaki/custom-domain-unenforced",
+        "htmlUrl": "https://github.com/TakashiSasaki/custom-domain-unenforced",
+        "visibility": "public",
+        "isPrivate": false,
+        "isArchived": false,
+        "isDisabled": false,
+        "isFork": false,
+        "defaultBranch": "main",
+        "githubHasPagesRaw": true,
+        "createdAt": "2026-06-19T00:00:00Z",
+        "updatedAt": "2026-06-19T12:00:00Z",
+        "pushedAt": "2026-06-19T18:00:00Z"
+      },
+      "pages": {
+        "enabled": true,
+        "statusRaw": "built",
+        "htmlUrl": "http://unenforced.com/",
+        "settingsUrl": "https://github.com/TakashiSasaki/custom-domain-unenforced/settings/pages",
+        "publicRaw": null,
+        "deployment": {
+          "method": "branch_docs",
+          "githubBuildTypeRaw": "legacy",
+          "sourceBranch": "main",
+          "sourcePath": "/docs",
+          "displaySummary": "main:/docs"
+        },
+        "customDomain": {
+          "configured": true,
+          "cnameRaw": "unenforced.com",
+          "hostname": "unenforced.com",
+          "githubProtectedDomainStateRaw": "verified",
+          "verificationState": "verified",
+          "pendingUnverifiedAt": null,
+          "stateSource": "github_pages_api"
+        },
+        "https": {
+          "enforced": false,
+          "certificate": {
+            "stateRaw": "approved",
+            "description": "Certificate is approved but HTTPS is not enforced",
+            "domains": [
+              "unenforced.com"
+            ],
+            "expiresAt": "2026-12-31T23:59:59Z"
+          }
+        },
+        "healthCheck": {
+          "requested": false,
+          "status": null
+        }
+      },
+      "findings": [
+        {
+          "code": "custom_domain_verified",
+          "category": "custom_domain",
+          "severity": "info",
+          "source": "github_pages_api",
+          "message": "The custom domain ownership has been successfully verified by GitHub.",
+          "evidence": {
+            "cname": "unenforced.com"
+          }
+        },
+        {
+          "code": "pages_https_not_enforced",
+          "category": "https",
+          "severity": "error",
+          "source": "github_pages_api",
+          "message": "HTTPS redirection is not enforced despite having an active static Pages site configuration.",
+          "evidence": {
+            "github_https_enforced_raw": false
+          }
+        },
+        {
+          "code": "custom_domain_https_not_enforced",
+          "category": "custom_domain",
+          "severity": "error",
+          "source": "app_derived",
+          "message": "Custom domain is registered but HTTPS transport redirection is disabled.",
+          "evidence": {
+            "cname": "unenforced.com",
+            "https_enforced": false
+          }
+        },
+        {
+          "code": "pages_deploy_method_branch_docs",
+          "category": "deployment",
+          "severity": "info",
+          "source": "github_pages_api",
+          "message": "Pages is deployed using a Git branch from \"/docs\" folder.",
+          "evidence": {
+            "branch": "main",
+            "path": "/docs"
+          }
+        }
+      ]
+    }
+  ],
+  "domains": []
+}

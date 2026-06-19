@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, signInWithPopup, GoogleAuthProvider, signInAnonymously, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
-import { getGithubTokenDocPath, getEnvironmentName } from './lib/firestorePaths';
+import { getGithubTokenDocPath, getEnvironmentName, getUserSettingDocPath } from './lib/firestorePaths';
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +13,7 @@ interface AuthContextType {
   hasStoredPat: boolean;
   savePatToFirestore: (pat: string) => Promise<void>;
   getStoredPat: () => Promise<string | null>;
+  getStoredTokenType: () => Promise<'classic' | 'fine_grained' | 'unknown' | null>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -87,11 +88,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token: pat,
         updatedAt: serverTimestamp()
       });
+
+      // Save token metadata as a separate non-secret document under user settings
+      const env = getEnvironmentName(import.meta.env.MODE);
+      const metadataPath = getUserSettingDocPath(env, user.uid, user.isAnonymous, 'tokenMetadata');
+      const metadataDocRef = doc(db, metadataPath);
+      const derivedType = pat.startsWith('github_pat_') ? 'fine_grained' : (pat.startsWith('ghp_') ? 'classic' : 'unknown');
+      await setDoc(metadataDocRef, {
+        tokenType: derivedType,
+        updatedAt: serverTimestamp()
+      });
+
       setHasStoredPat(true);
     } catch (e: any) {
       console.error("Failed to save to Firestore:", e);
       throw new Error("Failed to save to Firestore: " + e.message);
     }
+  };
+
+  const getStoredTokenType = async (): Promise<'classic' | 'fine_grained' | 'unknown' | null> => {
+    if (!user) return null;
+    try {
+      const env = getEnvironmentName(import.meta.env.MODE);
+      const metadataPath = getUserSettingDocPath(env, user.uid, user.isAnonymous, 'tokenMetadata');
+      const docRef = doc(db, metadataPath);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data().tokenType) {
+        return docSnap.data().tokenType;
+      }
+    } catch (e) {
+      console.error("Failed to fetch token metadata:", e);
+    }
+    return null;
   };
 
   const signInWithGoogle = async () => {
@@ -108,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInAsGuest, logout, hasStoredPat, savePatToFirestore, getStoredPat }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInAsGuest, logout, hasStoredPat, savePatToFirestore, getStoredPat, getStoredTokenType }}>
       {children}
     </AuthContext.Provider>
   );
