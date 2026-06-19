@@ -84,13 +84,21 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - `schemas/` - Export JSON schemas.
 
 ## Current Implementation Status
-- Modular Safe Refactoring and Testing Phase Completed. Secure endpoints separation, pure shared classification models, defensive CSV and fully-compliant JSON exporters are verified under comprehensive automated tests.
+- Release Candidate Hardening Phase. The UI design is near completion.
+- Established a TypeScript-first schema pipeline. JSON Schema files are strictly generated artifacts.
+- Formalized boundary between internal runtime/UI data and exported interchange data (`ExportRepositoryResult` vs `RepositoryResult`).
+- Firestore document types are provisionally encoded in `src/schema/firestoreTypes.ts`.
+- Secure endpoints separation, pure shared classification models, defensive CSV and fully-compliant JSON exporters are verified under comprehensive automated tests.
 
 ## Known Constraints and Open Questions
 - Automatic token cleanup for timed-out/expired anonymous sessions will be handled by a scheduled Cloud Function in a future iteration.
+- End-to-end UI regression tests (e.g., Playwright) are planned as next work, as the current test stack strictly covers backend schemas and unit methods natively via the Node test runner.
 
 ## Change Log for Agents
-- Updated specifications docs (, , ) to formally codify the in-memory fallback strategy for PATs and the simplification of the UI storage flows due to sandbox limits on Firestore.
+- Hardened into Release Candidate baseline: decoupled internal UI types (`src/types.ts`) from interchangeable schema types (`src/schema/exportTypes.ts`).
+- Added automated TypeScript-to-JSON Schema generation (`npm run schema:generate`) using `ts-json-schema-generator`.
+- Provisionally typed Firestore objects in `src/schema/firestoreTypes.ts`.
+- Updated specifications docs to formally codify the in-memory fallback strategy for PATs.
 - Initialized `AGENTS.md` to track project architecture and constraints.
 - Processed `docs/spec-appendix-github-api.md`. Used explicit Endpoint allowlist string checks.
 - Implemented pagination parsing on `/user/repos`.
@@ -100,10 +108,10 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Processed JSON Export Schema and created complete `schemas/github-pages-auditor-export-v1.schema.json`.
 - Refactored `server.ts` to separate raw endpoint fetches and allowlist matching into `server/githubClient.ts`.
 - Subdivided domain, SSL certificate, and deployment methods logic into pure shared classification module `src/audit/classification.ts`.
-- Moved JSON/CSV exporters out of components into pure builders under `src/export/exportBuilders.ts`, fully validating schema properties (fixed `'fine_grained'` tokenType enum and filtered out invalid classifications).
+- Moved JSON/CSV exporters out of components into pure builders under `src/export/exportBuilders.ts`, fully validating schema properties.
 - Implemented active double-guard on Express start bindings allowing sync automated tests execution without hangs.
 - Auth stub security strengthened behind `ALLOW_DUMMY_AUTH` gating.
-- Added systematic test coverage in `tests/comprehensive.test.ts` matching 23 assertions for API subpath restricts, classification engines, schema outputs, and CSV defenses.
-- Simplified log-in screen and authenticated layout, completely eliminating redundant headlines (like "Sign in to Auditor" and verbose descriptive subtitles) and permanent dashboards banner elements to prevent UI clutter.
-- Introduced a minimalist "What's this app?" help-modal feature on the logged-in dashboard workspace, hosting full application detail and security parameters gracefully on request.
+- Added systematic test coverage in `tests/comprehensive.test.ts`.
+- Simplified log-in screen and authenticated layout.
+- Introduced a minimalist "What's this app?" help-modal feature on the logged-in dashboard workspace.
 

@@ -2,7 +2,8 @@
 
 GitHub Pages Auditor is a multi-user web application that audits GitHub Pages settings across repositories accessible to fine-grained or classic Personal Access Tokens (PATs). It displays custom domain configuration status, HTTPS certificate state, and Pages deployment methods securely without modifying any settings.
 
-## Core Features & MVP Status
+## Core Features & Release Candidate (RC) Status
+- **Release Candidate Baseline**: Internal UI types and interchange types (JSON schema) are successfully decoupled. The UI is stabilized.
 - **Secure Backend API Auditing**: Directly proxies standard GitHub API endpoints from the Express backend, keeping the PAT invisible to the browser.
 - **Classification Engine**: Pure shared classification models mapping Github Pages metadata into standardized custom domain and SSL status models.
 - **Defense in Depth**: Escape patterns defend spreadsheet exports from formula injections; strict allowlists protect the proxy layers.
@@ -59,8 +60,8 @@ The data model for JSON exports (interchangeable result assets) is maintained us
   npm run schema:check
   ```
 
-## Non-Negotiable Security Rules & Constraints (MVP)
+## Non-Negotiable Security Rules & Constraints (RC)
 - **PAT-Only Authentication**: The application remains strictly PAT-only. No GitHub OAuth or GitHub Apps are implemented.
 - **Read-Only Proxy**: The backend only allowlists exact `GET` endpoints. The system will never support write actions (e.g., POST/PUT/DELETE pages settings or repository metadata).
 - **Actions Workflow Shield**: Action dispatching and workflow modification endpoints are strictly blocked under absolute regex boundaries to protect automation setups.
-- **Zero Firestore & Functions Dependency**: In the current MVP phase, PATs and session states are managed entirely in-memory at the Express server border. Cloud Firestore and Cloud Functions are disabled.
+- **Firestore Usage**: PAT storage and audit cache persistence are managed using the Firebase Client SDK to Firestore. Cloud Functions are **not used** in this iteration.

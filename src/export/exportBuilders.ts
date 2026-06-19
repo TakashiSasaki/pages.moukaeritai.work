@@ -6,6 +6,61 @@ import {
   ExportErrorClassification 
 } from '../schema/exportTypes';
 
+export function toExportRepositoryResult(r: RepositoryResult): ExportRepositoryResult {
+  const classification: ExportClassification[] = [];
+  if (r.customDomainStatus) {
+    classification.push(r.customDomainStatus as ExportClassification);
+  }
+  if (r.deploymentMethod && r.deploymentMethod !== 'not_applicable') {
+    classification.push(`pages_deploy_method_${r.deploymentMethod}` as ExportClassification);
+  }
+
+  const visibilityValue = (r.visibility === 'public' || r.visibility === 'private' || r.visibility === 'internal') 
+    ? r.visibility 
+    : null;
+
+  return {
+    githubRepoId: r.id,
+    owner: r.ownerName,
+    repo: r.repoName,
+    fullName: r.fullName,
+    repositoryTopUrl: r.htmlUrl,
+    pagesSettingsUrl: r.pagesSettingsUrl,
+    pagesUrl: r.hasPages ? (r.pagesHtmlUrl || `https://${r.ownerName}.github.io/${r.repoName}/`) : null,
+    private: r.visibility === 'private',
+    visibility: visibilityValue,
+    archived: r.archived,
+    disabled: r.disabled,
+    fork: r.isFork,
+    defaultBranch: r.defaultBranch,
+    hasPages: r.hasPages,
+    createdAtGitHub: r.createdAt,
+    updatedAtGitHub: r.updatedAt,
+    pushedAtGitHub: r.pushedAt,
+    pagesEnabled: !!r.hasPages,
+    pagesStatus: r.pagesStatus || null,
+    buildType: r.buildType || null,
+    deploymentMethod: r.deploymentMethod,
+    sourceBranch: r.sourceBranch || null,
+    sourcePath: r.sourcePath || null,
+    publishingSourceSummary: r.publishingSourceSummary || null,
+    pagesPublic: null,
+    customDomain: r.cname || null,
+    customDomainConfigured: !!r.cname,
+    protectedDomainState: r.protectedDomainState || null,
+    pendingDomainUnverifiedAt: r.pendingDomainUnverifiedAt || null,
+    httpsCertificateState: r.httpsCertificateState || null,
+    httpsCertificateDescription: r.httpsCertificateDescription || null,
+    httpsCertificateDomains: r.httpsCertificateDomains || [],
+    httpsCertificateExpiresAt: r.httpsCertificateExpiresAt || null,
+    httpsEnforced: r.httpsEnforced ?? null,
+    healthStatus: 'not_requested',
+    classification,
+    errorClassification: (r.errorClassification || null) as ExportErrorClassification,
+    diagnostics: {}
+  };
+}
+
 export function buildJsonExport(results: RepositoryResult[], pat: string): GitHubPagesAuditorExport {
   const pagesEnabledList = results.filter(r => r.hasPages);
   const customDomainList = pagesEnabledList.filter(r => r.cname);
@@ -61,61 +116,7 @@ export function buildJsonExport(results: RepositoryResult[], pat: string): GitHu
       deploymentBranchDocsCount: results.filter(r => r.deploymentMethod === 'branch_docs').length,
       deploymentUnknownCount: results.filter(r => r.deploymentMethod === 'unknown' || r.deploymentMethod === 'branch_unknown_path').length
     },
-    repositories: results.map(r => {
-      const classification: ExportClassification[] = [];
-      if (r.customDomainStatus) {
-        classification.push(r.customDomainStatus as ExportClassification);
-      }
-      if (r.deploymentMethod && r.deploymentMethod !== 'not_applicable') {
-        classification.push(`pages_deploy_method_${r.deploymentMethod}` as ExportClassification);
-      }
-
-      const visibilityValue = (r.visibility === 'public' || r.visibility === 'private' || r.visibility === 'internal') 
-        ? r.visibility 
-        : null;
-
-      const repoResult: ExportRepositoryResult = {
-        githubRepoId: r.id,
-        owner: r.ownerName,
-        repo: r.repoName,
-        fullName: r.fullName,
-        repositoryTopUrl: r.htmlUrl,
-        pagesSettingsUrl: r.pagesSettingsUrl,
-        pagesUrl: r.hasPages ? (r.pagesHtmlUrl || `https://${r.ownerName}.github.io/${r.repoName}/`) : null,
-        private: r.visibility === 'private',
-        visibility: visibilityValue,
-        archived: r.archived,
-        disabled: r.disabled,
-        fork: r.isFork,
-        defaultBranch: r.defaultBranch,
-        hasPages: r.hasPages,
-        createdAtGitHub: r.createdAt,
-        updatedAtGitHub: r.updatedAt,
-        pushedAtGitHub: r.pushedAt,
-        pagesEnabled: !!r.hasPages,
-        pagesStatus: r.pagesStatus || null,
-        buildType: r.buildType || null,
-        deploymentMethod: r.deploymentMethod,
-        sourceBranch: r.sourceBranch || null,
-        sourcePath: r.sourcePath || null,
-        publishingSourceSummary: r.publishingSourceSummary || null,
-        pagesPublic: null,
-        customDomain: r.cname || null,
-        customDomainConfigured: !!r.cname,
-        protectedDomainState: r.protectedDomainState || null,
-        pendingDomainUnverifiedAt: r.pendingDomainUnverifiedAt || null,
-        httpsCertificateState: r.httpsCertificateState || null,
-        httpsCertificateDescription: r.httpsCertificateDescription || null,
-        httpsCertificateDomains: r.httpsCertificateDomains || [],
-        httpsCertificateExpiresAt: r.httpsCertificateExpiresAt || null,
-        httpsEnforced: r.httpsEnforced ?? null,
-        healthStatus: 'not_requested',
-        classification,
-        errorClassification: (r.errorClassification || null) as ExportErrorClassification,
-        diagnostics: {}
-      };
-      return repoResult;
-    }),
+    repositories: results.map(toExportRepositoryResult),
     domains: []
   };
 }
