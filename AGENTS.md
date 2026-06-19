@@ -139,7 +139,10 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - **Primary deployment target**: **Cloud Run** (Active, Live).
   - Current Live Production URL: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
   - Region: `asia-east1`
-  - Custom Domain Status: Planned but pending assignment (Current major milestone is custom domain assignment readiness).
+  - Planned Custom Domain: `pages.moukaeritai.work`
+  - Current Major Milestone: Custom Domain Assignment Readiness for pages.moukaeritai.work
+  - Infrastructure Mutation Rule: Do not mutate DNS, Cloud Run, or Firebase Auth externally in coding-agent tasks. Only provide operator checklists.
+  - Post-Assignment: Document required post-assignment docs updates after activation happens.
 - **Crucial Warning**: Standard Firebase Hosting alone *cannot* run the Express backend. Firebase Hosting alone cannot run the Express backend. It must be paired with Cloud Run via proxy rewrites matching `/api/*` if edge CDN is desired.
 
 ## Known Constraints and Open Questions

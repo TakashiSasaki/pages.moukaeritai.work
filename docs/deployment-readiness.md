@@ -24,8 +24,9 @@ The application is already running on **Google Cloud Run** in containerized prod
 *   **Current Live Production URL**: [https://github-pages-auditor-1042140630327.asia-east1.run.app](https://github-pages-auditor-1042140630327.asia-east1.run.app)
 *   **Region**: `asia-east1`
 *   **Status**: Active & Live
-*   **Custom Domain Status**: Pending custom domain assignment trial.
-*   **Next Milestone**: Cloud Run Production Hardening and Custom Domain Assignment Readiness.
+*   **Planned Custom Domain**: `pages.moukaeritai.work`
+*   **Custom Domain Status**: planned, not yet assigned.
+*   **Current Milestone**: Custom Domain Assignment Readiness for pages.moukaeritai.work
 
 ### Deployment Runtime Details:
 *   **Container Image**: Dual-stage light Alpine build with Node.js 20.

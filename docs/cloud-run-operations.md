@@ -7,7 +7,9 @@ This document outlines standard operating procedures, architectural summaries, a
 ## 1. Environment Details
 
 *   **Platform**: Google Cloud Run (Fully Managed Serverless Container Platform)
-*   **Active Live Production URL**: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
+*   **Active Live Production URL** (Current canonical URL before activation): `https://github-pages-auditor-1042140630327.asia-east1.run.app`
+*   **Planned Custom Domain** (Future canonical URL after activation): `https://pages.moukaeritai.work`
+    *   *Note: Both URLs may coexist during transition.*
 *   **Primary Region**: `asia-east1`
 *   **Runtime Architecture**: Full-stack Node.js Express server acting as both the API server for safe audits proxying and a static server for the compiled React + Vite + Tailwind CSS frontend.
 *   **Startup Command**: `node dist/server.cjs`
@@ -33,7 +35,7 @@ The application features a compact, secure, and optimized dual-stage Alpine `Doc
 The Express container implements an unauthenticated health check endpoint:
 *   **Endpoint**: `GET /healthz`
 *   **Expected Response**: `{ "ok": true }` with HTTP `200` status.
-*   **Rules on Health Logs**: Never includes configuration info, secrets, or internal status tags in this response. It acts as an elite liveness and readiness probe under global Cloud Run container specifications.
+*   **Rules on Health Logs**: Never includes configuration info, secrets, or internal status tags in this response. It acts as an elite liveness and readiness probe under global Cloud Run container specifications. Must not expose environment details or secrets.
 
 ---
 
@@ -67,6 +69,12 @@ To safeguard user credentials and protect administrative tokens, **the server mu
 
 Any log statement containing references to PAT strings or auth heads will fail security auditing.
 
+### Post-Custom-Domain Log Inspection Guidance
+After domain cutover (`pages.moukaeritai.work`), inspect Cloud Run logs to confirm:
+*   No `auth/unauthorized-domain` errors (indicates missing Firebase configuration).
+*   No leaked secrets, PATs, GitHub Authorization headers, Firebase ID tokens, or raw credential-bearing headers.
+*   The `origin` and `referer` headers appropriately reflect the new custom domain without breaking the proxy validations.
+
 ---
 
 ## 6. Verification & Rollback Guides
@@ -75,12 +83,22 @@ Any log statement containing references to PAT strings or auth heads will fail s
 Execute these manual checks upon any container revision or configuration update:
 1.  [ ] **Endpoint Access**: Visit `/healthz` directly in the browser and confirm it returns `{ "ok": true }` with status `200`.
 2.  [ ] **Homepage Render**: Load the current Cloud Run URL (`https://github-pages-auditor-1042140630327.asia-east1.run.app`). Verify that the unauthenticated landing card loads, displaying descriptive styling with Inter typography.
+
 3.  [ ] **Authentication Options**: Verify that "Sign in with Google" and fallback "Guest Mode" / "Use Temporary Guest Session" are fully interactable.
 4.  [ ] **Sign-In Action**: Sign in as a temporary guest session or via Google.
 5.  [ ] **Token Lifecycle**: Save a test GitHub Personal Access Token (PAT). Confirm the app validates it via `/api/pat/validate` and stores it securely in Firestore.
 6.  [ ] **Audit Run**: Click "Start Audit Scan". Verify that repositories are loaded and custom domain/HTTPS characteristics are classified.
 7.  [ ] **Export Formats**: Click "Export CSV" and "Export JSON". Verify that downloads are served cleanly.
 8.  [ ] **Exclusion Check**: Confirm there is absolutely no GitHub OAuth or GitHub App installation button, or references to other unrequested modules.
+
+### Custom-Domain Smoke Test Checklist
+Once the custom domain is mapped:
+1.  [ ] **Endpoint Access**: Visit `https://pages.moukaeritai.work/healthz` and confirm `{ "ok": true }`.
+2.  [ ] **Homepage Render**: Load `https://pages.moukaeritai.work`.
+3.  [ ] **Sign-In Options**: Verify Google sign-in and anonymous guest sign-in work without origin errors.
+4.  [ ] **Core Auditing Workflow**: Verify PAT validation, audit run, and audit view logic operates correctly.
+5.  [ ] **Export Generation**: Confirm all export outputs (CSV, JSON V1, JSON V2 Draft) generate successfully.
+6.  [ ] **UI Elements**: Confirm no unauthorized environment banners or unexpected OAuth buttons appear.
 
 ### Rollback Strategy
 If errors appear in Cloud Run logs or if the manual smoke-test checklist fails:

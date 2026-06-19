@@ -94,7 +94,9 @@ firebase deploy --only firestore:rules
 *   **Active Live Production URL**: [https://github-pages-auditor-1042140630327.asia-east1.run.app](https://github-pages-auditor-1042140630327.asia-east1.run.app)
 *   **Active Production Region**: `asia-east1`
 *   **Deployment Status**: Google Cloud Run is our active, live runtime.
-*   **Custom Domain Status**: Planned but pending assignment (Current operational milestone is custom domain readiness).
+*   **Planned Custom Domain**: `pages.moukaeritai.work`
+*   **Custom Domain Status**: planned, not yet assigned (Current milestone: Custom Domain Assignment Readiness for pages.moukaeritai.work)
+*   **Export Schema Status**: V1 default, V2 draft/interchange candidate, examples validation.
 
 ---
 
