@@ -19,16 +19,20 @@ export interface LauncherGridProps {
   readOnly?: boolean;
 }
 
-function LauncherSiteIcon({ site }: { site: LauncherSite }) {
+function LauncherSiteIcon({ site, sizeClass = "w-12 h-12" }: { site: LauncherSite; sizeClass?: string }) {
   const [pwaError, setPwaError] = React.useState(false);
   const [favError, setFavError] = React.useState(false);
 
   const showPwa = !!(site.pwaIconUrl && !pwaError);
-  const showFav = !!(site.faviconUrl && !favError);
+  // PWA優先で1つのアイコンのみを表示させる
+  const showFav = !showPwa && !!(site.faviconUrl && !favError);
+
+  const isLarge = sizeClass.includes('68') || sizeClass.includes('16');
+  const textClass = isLarge ? 'text-2xl' : 'text-xl';
 
   if (!showPwa && !showFav) {
     return (
-      <div className="w-12 h-12 bg-slate-100 group-hover:bg-indigo-50 group-hover:text-indigo-600 rounded-xl flex items-center justify-center text-slate-600 font-bold text-xl uppercase tracking-wider select-none shrink-0 border border-slate-200 group-hover:border-indigo-200 transition-colors duration-300 group-hover:rotate-3">
+      <div className={`${sizeClass} bg-slate-100 group-hover:bg-indigo-50 group-hover:text-indigo-600 rounded-xl flex items-center justify-center text-slate-600 font-bold ${textClass} uppercase tracking-wider select-none shrink-0 border border-slate-200 group-hover:border-indigo-200 transition-colors duration-300 group-hover:rotate-3`}>
         {site.name.charAt(0)}
       </div>
     );
@@ -41,7 +45,7 @@ function LauncherSiteIcon({ site }: { site: LauncherSite }) {
           <img
             src={site.pwaIconUrl!}
             alt="PWA Icon"
-            className="w-12 h-12 object-contain rounded-xl select-none shrink-0 border border-emerald-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs"
+            className={`${sizeClass} object-contain rounded-xl select-none shrink-0 border border-emerald-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs`}
             onError={() => setPwaError(true)}
             referrerPolicy="no-referrer"
           />
@@ -55,17 +59,66 @@ function LauncherSiteIcon({ site }: { site: LauncherSite }) {
           <img
             src={site.faviconUrl!}
             alt="Favicon"
-            className="w-12 h-12 object-contain rounded-xl select-none shrink-0 border border-slate-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs"
+            className={`${sizeClass} object-contain rounded-xl select-none shrink-0 border border-slate-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs`}
             onError={() => setFavError(true)}
             referrerPolicy="no-referrer"
           />
-          {showPwa && (
-            <span className="absolute -bottom-1 -right-1 bg-indigo-500 text-white text-[7px] font-bold px-0.5 rounded-sm border border-white shadow-2xs select-none">
-              FAV
-            </span>
-          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function CircularDomainBadge({ site }: { site: LauncherSite }) {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const pathId = `circle-path-${site.id}`;
+  const rawText = site.hostname || '';
+  
+  // Pad/repeat the domain text to look great on a circular path (adjusted for 1.5x larger font size to prevent overlapping)
+  let displayText = rawText;
+  if (rawText.length < 8) {
+    displayText = `${rawText} • ${rawText} • ${rawText} •`;
+  } else if (rawText.length < 16) {
+    displayText = `${rawText} • ${rawText} •`;
+  } else {
+    displayText = `${rawText} •`;
+  }
+
+  return (
+    <div 
+      className="relative w-28 h-28 shrink-0 flex items-center justify-center group/circle"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Central Icon - size scaled to 1.4x (w-12 -> w-[68px], which is 48px * 1.41 = 68px) */}
+      <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+        <div className="w-[68px] h-[68px] rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center overflow-hidden transition-all duration-350 group-hover/circle:scale-110 group-hover/circle:shadow-md">
+          <LauncherSiteIcon site={site} sizeClass="w-[68px] h-[68px]" />
+        </div>
+      </div>
+
+      {/* SVG Circular Text - rotating slowly on hover, font size scaled to 1.5x (~16px) and crystal clear text-slate-800 */}
+      <svg
+        viewBox="0 0 112 112"
+        className="w-full h-full text-slate-800 group-hover/circle:text-indigo-700 fill-current pointer-events-none transition-colors duration-300"
+        style={{ 
+          animation: `spin ${isHovered ? '8s' : '18s'} linear infinite`,
+        }}
+      >
+        <defs>
+          {/* circle centered at 56, 56 with radius 42 starting at top-center */}
+          <path
+            id={pathId}
+            d="M 56,14 A 42,42 0 1,1 55.9,14"
+            fill="none"
+          />
+        </defs>
+        <text className="font-mono text-[16px] font-bold tracking-[0.08em] uppercase">
+          <textPath href={`#${pathId}`} startOffset="0%">
+            {displayText}
+          </textPath>
+        </text>
+      </svg>
     </div>
   );
 }
@@ -86,136 +139,190 @@ function LauncherCardItem({
   saving,
   readOnly,
   onMove
-}: LauncherCardItemProps) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+ }: LauncherCardItemProps) {
+  const [isPressed, setIsPressed] = React.useState(false);
+  const [bubblePlacement, setBubblePlacement] = React.useState<'top' | 'left' | 'right'>('top');
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const pressTimer = React.useRef<any>(null);
+  const wasHeld = React.useRef(false);
 
-  if (!isExpanded) {
-    // 縮小されたコンパクトカード (アイコン + ドメイン名だけの小さなもの、デフォルト)
-    return (
-      <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl shadow-xs hover:shadow-md hover:border-indigo-300/80 hover:bg-white transition-all duration-300 p-3.5 flex items-center group relative overflow-hidden min-h-[76px] w-full">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/0 via-transparent to-slate-50/0 group-hover:from-indigo-50/20 group-hover:to-purple-50/10 transition-colors duration-500 pointer-events-none"></div>
-        
-        <div className="flex items-center gap-3 w-full pr-8 relative z-10 min-w-0">
-          <div className="shrink-0 transform scale-90 origin-left">
-            <LauncherSiteIcon site={site} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <a
-              href={site.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-slate-800 text-sm hover:text-indigo-600 hover:underline truncate flex items-center gap-1 group/link max-w-full"
-              title={site.url}
-            >
-              <span className="truncate">{site.hostname}</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-slate-400" />
-            </a>
-          </div>
-        </div>
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    
+    wasHeld.current = false;
+    if (pressTimer.current) clearTimeout(pressTimer.current);
 
-        {/* 右上の隅に大きくするトグルボタン */}
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors z-20"
-          title="詳細を表示"
-        >
-          <Maximize2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    );
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceTop = rect.top;
+      const spaceRight = window.innerWidth - rect.right;
+      const spaceLeft = rect.left;
+
+      // Select layout dynamically based on available screen bounds (above, right, or left)
+      if (spaceTop > 240) {
+        setBubblePlacement('top');
+      } else if (spaceRight > 320) {
+        setBubblePlacement('right');
+      } else if (spaceLeft > 320) {
+        setBubblePlacement('left');
+      } else {
+        // Fallback placement (choose side with more screen real-estate)
+        if (spaceRight >= spaceLeft) {
+          setBubblePlacement('right');
+        } else {
+          setBubblePlacement('left');
+        }
+      }
+    }
+
+    // Active holding-mode after 150ms to verify user is active pressing to inspect details
+    pressTimer.current = setTimeout(() => {
+      setIsPressed(true);
+      wasHeld.current = true;
+    }, 150);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+
+    if (isPressed) {
+      setIsPressed(false);
+    }
+  };
+
+  const handlePointerLeave = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    setIsPressed(false);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
+  // Define speech bubble positioning classes and arrow vectors depending on calculated placement
+  let placementClasses = '';
+  let arrowBorderClasses = '';
+  let arrowBodyClasses = '';
+
+  if (bubblePlacement === 'top') {
+    placementClasses = 'bottom-full left-1/2 -translate-x-1/2 mb-4';
+    arrowBorderClasses = 'absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[9px] border-r-[9px] border-t-[9px] border-l-transparent border-r-transparent border-t-indigo-600 -z-10 translate-y-[-1px]';
+    arrowBodyClasses = 'absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[8px] border-l-transparent border-r-transparent border-t-white z-50';
+  } else if (bubblePlacement === 'left') {
+    placementClasses = 'right-full top-1/2 -translate-y-1/2 mr-4';
+    arrowBorderClasses = 'absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[9px] border-b-[9px] border-l-[9px] border-t-transparent border-b-transparent border-l-indigo-600 -z-10 translate-x-[-1px]';
+    arrowBodyClasses = 'absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[8px] border-b-[8px] border-l-[8px] border-t-transparent border-b-transparent border-l-white z-50';
+  } else if (bubblePlacement === 'right') {
+    placementClasses = 'left-full top-1/2 -translate-y-1/2 ml-4';
+    arrowBorderClasses = 'absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[9px] border-b-[9px] border-r-[9px] border-t-transparent border-b-transparent border-r-indigo-600 -z-10 translate-x-[1px]';
+    arrowBodyClasses = 'absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[8px] border-b-[8px] border-r-[8px] border-t-transparent border-b-transparent border-r-white z-50';
   }
 
-  // 展開されたフル情報カード (従来の全バッジ、並び替え、リッチな詳細)
   return (
-    <div className="bg-white/90 backdrop-blur-sm border-2 border-indigo-200 rounded-2xl shadow-md hover:shadow-xl hover:border-indigo-300 transition-all duration-300 p-5 flex flex-col group relative overflow-hidden w-full">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/20 via-transparent to-purple-50/10 group-hover:from-indigo-100/30 group-hover:to-purple-100/20 transition-colors duration-500 pointer-events-none"></div>
-      
-      <div className="flex justify-between items-start mb-4 relative z-10">
-        <LauncherSiteIcon site={site} />
-        
-        <div className="flex items-center gap-1.5 z-20">
-          {!readOnly && onMove && (
-            <div className="flex gap-0.5 bg-slate-50 border border-slate-100 rounded-lg p-0.5">
-              <button
-                onClick={() => onMove(index, -1)}
-                disabled={index === 0 || saving}
-                className="p-1 text-slate-400 hover:text-slate-800 hover:bg-white rounded-md disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                title="Move earlier"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => onMove(index, 1)}
-                disabled={index === sitesLength - 1 || saving}
-                className="p-1 text-slate-400 hover:text-slate-800 hover:bg-white rounded-md disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                title="Move later"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+    <div 
+      ref={containerRef}
+      className="relative flex flex-col items-center justify-center p-4"
+      onContextMenu={handleContextMenu}
+    >
+      {/* Bare SVG Icon & Rotating domain text - No surround borders/cards layout ("露出したままでいいです") */}
+      <a
+        href={site.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="cursor-pointer active:scale-95 transition-all duration-200 select-none touch-none"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
+        onPointerCancel={handlePointerLeave}
+        onClick={(e) => {
+          if (wasHeld.current) {
+            e.preventDefault();
+          }
+        }}
+        title={site.url}
+      >
+        <CircularDomainBadge site={site} />
+      </a>
 
-          {/* 右上の隅に小さくする (閉じる) ボタン */}
+      {/* Elegant Move Order controls sitting directly below the circular SVG item */}
+      {!readOnly && onMove && (
+        <div className="flex gap-1 bg-white/70 hover:bg-white border border-slate-200 shadow-xs rounded-full p-1 mt-2 z-20 transition-all duration-300">
           <button
-            onClick={() => setIsExpanded(false)}
-            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors"
-            title="詳細を閉じる"
+            onClick={() => onMove(index, -1)}
+            disabled={index === 0 || saving}
+            className="p-1 text-slate-400 hover:text-slate-800 rounded-full disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
+            title="Move left"
           >
-            <Minimize2 className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => onMove(index, 1)}
+            disabled={index === sitesLength - 1 || saving}
+            className="p-1 text-slate-400 hover:text-slate-800 rounded-full disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
+            title="Move right"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
+      )}
 
-      <div className="mb-4 flex-grow relative z-10">
-        <a
-          href={site.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold text-slate-900 text-lg hover:text-blue-600 transition-colors inline-block break-all group/link"
-        >
-          {site.name}
-          <ExternalLink className="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-opacity inline ml-1 align-text-bottom" />
-        </a>
-        <p className="text-xs text-slate-500 break-all mt-1" title={site.ownerRepo}>{site.ownerRepo}</p>
-      </div>
+      {/* Floating Rich Detailed Overlay Panel (Displays exactly while held/long-pressed, dismissed instantly when input is released) */}
+      {isPressed && (
+        <div className={`absolute ${placementClasses} min-w-[280px] sm:min-w-[320px] bg-white border-2 border-indigo-600 rounded-2xl shadow-xl p-5 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100 ease-out`}>
+          {/* Arrow vectors styled for the specific speech bubble direction */}
+          <div className={arrowBodyClasses}></div>
+          <div className={arrowBorderClasses}></div>
 
-      <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-slate-100 relative z-10">
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 truncate max-w-[140px]" title={site.hostname}>
-          {site.hostname}
-        </span>
-        {site.httpsState === 'enforced' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">
-            HTTPS
-          </span>
-        )}
-        {site.deploymentMethod === 'workflow' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-            Workflow
-          </span>
-        )}
-        {site.isPwa ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-2xs">
-            PWA対応
-          </span>
-        ) : (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-400 border border-slate-200">
-            PWA非対応
-          </span>
-        )}
-        {site.pwaIconUrl ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100" title={site.pwaIconUrl}>
-            PWAアイコン
-          </span>
-        ) : site.faviconUrl ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100" title={site.faviconUrl}>
-            ファビコン
-          </span>
-        ) : (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-normal bg-slate-100 text-slate-400 border border-slate-200">
-            アイコン未検出
-          </span>
-        )}
-      </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/20 via-transparent to-purple-50/10 pointer-events-none rounded-2xl"></div>
+          
+          <div className="flex justify-between items-start mb-4 relative z-10">
+            <LauncherSiteIcon site={site} />
+            <span className="text-[10px] text-slate-400 font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
+              AUDIT METADATA
+            </span>
+          </div>
+
+          <div className="mb-4 relative z-10">
+            <h4 className="font-bold text-slate-900 text-lg break-all">
+              {site.name}
+            </h4>
+            <p className="text-xs text-slate-500 break-all mt-1" title={site.ownerRepo}>
+              {site.ownerRepo}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100 relative z-10">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 truncate max-w-[140px]" title={site.hostname}>
+              {site.hostname}
+            </span>
+            {site.httpsState === 'enforced' && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-50 text-emerald-700 border border-green-200">
+                HTTPS
+              </span>
+            )}
+            {site.deploymentMethod === 'workflow' && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-indigo-700 border border-blue-200">
+                Workflow
+              </span>
+            )}
+            {site.isPwa ? (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-2xs">
+                PWA対応
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200">
+                PWA非対応
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
