@@ -756,17 +756,35 @@ export default function Dashboard() {
     return { absolute, relative };
   })();
 
+  const EnvironmentBanner = (
+    <div className={`w-full text-center py-1.5 text-[11px] font-bold uppercase tracking-widest border-b shrink-0 flex items-center justify-center gap-2 ${
+      env === 'production' 
+        ? 'bg-emerald-50 text-emerald-800 border-emerald-100' 
+        : 'bg-amber-50 text-amber-800 border-amber-200'
+    }`}>
+      {env === 'production' ? (
+        <><CheckCircle className="w-3.5 h-3.5" /> Production Environment</>
+      ) : (
+        <><AlertCircle className="w-3.5 h-3.5" /> Development Environment</>
+      )}
+    </div>
+  );
+
   if (isLoadingResults) {
     return (
-      <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
-        <p className="text-sm font-medium text-slate-500 mt-3 animate-pulse">Loading GitHub Pages audit report...</p>
+      <div className="flex-1 w-full flex flex-col items-center">
+        {EnvironmentBanner}
+        <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex flex-col items-center justify-center flex-1">
+          <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
+          <p className="text-sm font-medium text-slate-500 mt-3 animate-pulse">Loading GitHub Pages audit report...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex-1 w-full min-h-0 flex flex-col overflow-hidden max-w-7xl mx-auto py-0">
+      {EnvironmentBanner}
       {/* Dialog / Modal for Domain Lock Guide */}
       {showDomainLockGuide && (
         <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">

@@ -32,7 +32,7 @@ export interface RepositoryResultDocument {
 
 export interface AnonymousSessionDocument {
   // Currently we use anonymous sessions implicitly through Firebase Auth
-  // We may store tokens under `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default`
+  // We may store tokens under `githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default`
   // But a dedicated active session document is not yet automatically created.
   [key: string]: any;
 }

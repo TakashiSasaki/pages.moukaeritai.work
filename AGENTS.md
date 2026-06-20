@@ -170,6 +170,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Added scripts `test:rules` and `test:unit` to `package.json` while maintaining a green parent `npm test` script.
 - Documented deployment readiness roadmap in `docs/deployment-readiness.md` and UI testing roadmap in `docs/ui-regression-plan.md`.
 - Consolidated overall setup and configurations into `README.md`.
+- Documented environment path swapping and phantom document concepts in `docs/firestore-architecture.md`.
 
 
 

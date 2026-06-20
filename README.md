@@ -65,7 +65,8 @@ Maintain absolute coverage using these verification commands:
 | `npm run schema:check` | Schema Drift | Guarantees that built JSON schema matches types exactly. |
 | `npm run build` | Production Compilation | Bundles Vite static assets and compiles the ES Express backend into self-contained `dist/server.cjs` via esbuild. |
 
-For detailed metadata, properties, classification mappings, and future nested schema developments, consult:
+For detailed metadata, properties, classification mappings, future nested schema developments, and database architecture, consult:
+* **docs/firestore-architecture.md** — Conceptual documentation on Phantom documents and environment segregations in Firestore.
 * **docs/export-schema-vocabulary.md** — Property-by-property dictionary comparing V2 names to raw GitHub API counterparts.
 * **docs/export-schema-v2.md** — Conceptual design and structures for nested data schema records.
 
