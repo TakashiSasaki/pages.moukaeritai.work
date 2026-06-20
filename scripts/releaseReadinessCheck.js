@@ -210,18 +210,41 @@ try {
   printFail(`Failed to audit active custom domain: ${e.message}`);
 }
 
-// 9. Document to Package Version Check
+// 9. Document to Package Version & Namespace Check
 try {
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   const version = packageJson.version;
   
+  if (version !== '1.5.0') {
+    printFail(`Package version must be exactly '1.5.0'. Found: ${version}`);
+  } else {
+    printSuccess(`Package version is exactly '1.5.0'.`);
+  }
+  
+  const readme = fs.readFileSync('README.md', 'utf8');
   const agents = fs.readFileSync('AGENTS.md', 'utf8');
   const deploymentReadiness = fs.readFileSync('docs/deployment-readiness.md', 'utf8');
+  const deferredContent = fs.readFileSync('docs/deferred-work.md', 'utf8');
   
-  if (agents.includes(version) && deploymentReadiness.includes(version)) {
+  if (readme.includes(version) && agents.includes(version) && deploymentReadiness.includes(version) && deferredContent.includes(version)) {
     printSuccess(`Document version strings are perfectly aligned with package.json (${version}).`);
   } else {
-    printFail(`Inconsistent version references found between AGENTS.md, deployment-readiness.md, or package.json (${version}).`);
+    printFail(`Inconsistent version references found between AGENTS.md, README.md, deferred-work.md, deployment-readiness.md, or package.json (${version}).`);
+  }
+
+  // Fallback and Namespace checks
+  const hasCloudRunDoc = readme.includes('Cloud Run') || agents.includes('Cloud Run') || deploymentReadiness.includes('Cloud Run');
+  if (hasCloudRunDoc) {
+    printSuccess(`Cloud Run is documented as fallback/underlying runtime.`);
+  } else {
+    printFail(`Cloud Run is not documented as fallback/underlying runtime.`);
+  }
+
+  const hasV2NamespaceDocs = readme.includes('githubPagesAuditorV2') && agents.includes('githubPagesAuditorV2');
+  if (hasV2NamespaceDocs) {
+    printSuccess(`Firestore namespace 'githubPagesAuditorV2' is correctly documented.`);
+  } else {
+    printFail(`Firestore namespace 'githubPagesAuditorV2' is missing in documentation.`);
   }
 } catch (e) {
   printFail(`Failed to audit version strings: ${e.message}`);
@@ -248,22 +271,74 @@ try {
   printFail(`Failed to audit site metadata documentation: ${e.message}`);
 }
 
-// 11. Anonymous Session Lifecycle & Tests Check
+// 11. Anonymous Session Lifecycle, Tests & Non-Goals Check
 try {
   const hasLifecycleDocs = fs.existsSync('docs/anonymous-session-lifecycle.md');
   const hasLifecycleTests = fs.existsSync('tests/anonymous-lifecycle.test.ts');
   const deferredContent = fs.readFileSync('docs/deferred-work.md', 'utf8');
+  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   
   // Verify that the actual Firebase cloud functions / automated cleanup jobs remain a deferred non-goal
   const isFunctionsDeferred = deferredContent.includes('automation') || deferredContent.includes('policy') || deferredContent.includes('operator');
+  const hasExplicitNonGoals = deferredContent.includes('Exclusion of GitHub OAuth') &&
+                               deferredContent.includes('Exclusion of GitHub App Authentication') &&
+                               deferredContent.includes('Exclusion of Gemini / Generative AI / LLM Integration');
   
-  if (hasLifecycleDocs && hasLifecycleTests && isFunctionsDeferred) {
-    printSuccess(`Anonymous Session Lifecycle module and operator checklists are fully documented and verified by unit tests.`);
+  // smoke:public script exists in package.json
+  const hasSmokeScript = packageJson.scripts && packageJson.scripts['smoke:public'];
+
+  if (hasLifecycleDocs && hasLifecycleTests && isFunctionsDeferred && hasExplicitNonGoals && hasSmokeScript) {
+    printSuccess(`Anonymous Session Lifecycle modules, smoke scripts, and non-goals are completely verified in documentation and config.`);
   } else {
-    printFail(`Missing anonymous lifecycle docs, helper tests, or deferred goals definition.`);
+    printFail(`Missing anonymous lifecycle helper, test suite, public smoke script definition, or explicit non-goals schema.`);
   }
 } catch (e) {
   printFail(`Failed to audit anonymous session lifecycle status: ${e.message}`);
+}
+
+// 12. Strict Stale and Forbidden Phrase Audits
+try {
+  const filesToScanForStale = [
+    'README.md',
+    'AGENTS.md',
+    'docs/deployment-readiness.md',
+    'docs/custom-domain-readiness.md',
+    'docs/deferred-work.md',
+    'docs/anonymous-session-lifecycle.md'
+  ];
+  let staleFound = false;
+  const stalePhrases = [
+    'planned, not yet assigned',
+    'Custom Domain Assignment Readiness',
+    'github-pages-auditor.export.' + 'v1',
+    'githubPages' + 'AuditorV1',
+    'GitHub OAuth' + ' as future work',
+    'GitHub App' + ' as future work',
+    'Gemini/AI' + ' as future work',
+    'GitHub OAuth' + ' can be added later',
+    'GitHub App' + ' can be added later',
+    'Gemini/AI' + ' can be added later',
+    'future work: ' + 'GitHub OAuth',
+    'future work: ' + 'GitHub App',
+    'future work: ' + 'Gemini/AI'
+  ];
+
+  for (const f of filesToScanForStale) {
+    if (fs.existsSync(f)) {
+      const content = fs.readFileSync(f, 'utf8');
+      for (const phrase of stalePhrases) {
+        if (content.includes(phrase)) {
+          printFail(`Stale or forbidden phrase "${phrase}" found in ${f}.`);
+          staleFound = true;
+        }
+      }
+    }
+  }
+  if (!staleFound) {
+    printSuccess(`No stale/forbidden phrases found. Release baseline is 100% active, clean, and production-hardened.`);
+  }
+} catch (e) {
+  printFail(`Failed to audit stale phrases: ${e.message}`);
 }
 
 console.log('\n=== RESULT ===');

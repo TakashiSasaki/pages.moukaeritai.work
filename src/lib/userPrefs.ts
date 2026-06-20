@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { getUserSettingDocPath, getEnvironmentName } from './firestorePaths';
+import { createAnonymousSessionExpiration } from './anonymousSessionLifecycle';
 
 /**
  * Saves the last visited path to Firestore for the given user.
@@ -12,10 +13,19 @@ export async function saveLastPath(uid: string, isAnonymous: boolean, path: stri
     const env = getEnvironmentName(import.meta.env.MODE);
     const docPath = getUserSettingDocPath(env, uid, isAnonymous, 'navigation');
     const docRef = doc(db, docPath);
-    await setDoc(docRef, {
+    const now = new Date();
+    const payload: any = {
       lastPath: path,
       updatedAt: serverTimestamp()
-    });
+    };
+
+    if (isAnonymous) {
+      payload.createdAt = now.toISOString();
+      payload.expiresAt = createAnonymousSessionExpiration(now).toISOString();
+      payload.lastSeenAt = now.toISOString();
+    }
+
+    await setDoc(docRef, payload, { merge: true });
   } catch (e) {
     console.warn('Failed to save last path to Firestore:', e);
   }

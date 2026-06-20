@@ -37,10 +37,37 @@ export interface RepositoryResultDocument {
 
 export interface AnonymousSessionDocument {
   // Currently we use anonymous sessions implicitly through Firebase Auth
-  // We may store tokens under `githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default`
-  // But a dedicated active session document is not yet automatically created.
+  // We store tokens under `githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default`
+  // We also save settings documents under `githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/settings`
   [key: string]: any;
   createdAt?: string; // ISO-8601 creation timestamp
   expiresAt?: string; // ISO-8601 expiration timestamp
   lastSeenAt?: string; // ISO-8601 last activity timestamp
+}
+
+export interface NavigationSettingDocument {
+  lastPath: string; // The last visited URL path
+  updatedAt: unknown; // Firebase FieldValue serverTimestamp
+  createdAt?: string; // ISO-8601 creation timestamp for anonymous users
+  expiresAt?: string; // ISO-8601 expiration timestamp for anonymous users
+  lastSeenAt?: string; // ISO-8601 last activity timestamp for anonymous users
+}
+
+export interface TokenMetadataSettingDocument {
+  tokenType: 'classic' | 'fine_grained' | 'unknown'; // Derived PAT token type
+  updatedAt: unknown; // Firebase FieldValue serverTimestamp
+  createdAt?: string; // ISO-8601 creation timestamp for anonymous users
+  expiresAt?: string; // ISO-8601 expiration timestamp for anonymous users
+  lastSeenAt?: string; // ISO-8601 last activity timestamp for anonymous users
+}
+
+export interface LauncherLayoutSettingDocument {
+  schemaVersion: string; // "github-pages-auditor.launcherLayout.v1"
+  layoutMode: string; // "ordered_grid"
+  orderedSiteIds: string[]; // Ordered list of repo ID or full_name strings
+  hiddenSiteIds: string[]; // For filtering hidden tiles
+  updatedAt: unknown; // Firebase FieldValue serverTimestamp
+  createdAt?: string; // ISO-8601 creation timestamp for anonymous users
+  expiresAt?: string; // ISO-8601 expiration timestamp for anonymous users
+  lastSeenAt?: string; // ISO-8601 last activity timestamp for anonymous users
 }
