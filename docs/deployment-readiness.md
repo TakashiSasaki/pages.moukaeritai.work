@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Deployment Readiness Baseline
-Version: `1.5.1` (Public No-Auth E2E & Patch Version Governance Baseline)
+Version: `1.5.2` (Public No-Auth E2E & Patch Version Governance Baseline)
 
 This document formalizes the production deployment status, custom domain readiness, and infrastructure requirements for the **GitHub Pages Auditor** application.
 

@@ -214,15 +214,16 @@ try {
 try {
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   const version = packageJson.version;
+  const EXPECTED_VERSION = '1.5.2';
   
   // Validate SemVer format
   const semverRegex = /^\d+\.\d+\.\d+$/;
   if (!semverRegex.test(version)) {
     printFail(`Package version is not a valid SemVer string. Found: ${version}`);
-  } else if (version !== '1.5.1') {
-    printFail(`Package version must be exactly '1.5.1'. Found: ${version}`);
+  } else if (version !== EXPECTED_VERSION) {
+    printFail(`Package version must be exactly '${EXPECTED_VERSION}'. Found: ${version}`);
   } else {
-    printSuccess(`Package version is exactly '1.5.1'.`);
+    printSuccess(`Package version is exactly '${EXPECTED_VERSION}'.`);
   }
   
   const readme = fs.readFileSync('README.md', 'utf8');
@@ -242,6 +243,14 @@ try {
     printSuccess(`Cloud Run is documented as fallback/underlying runtime.`);
   } else {
     printFail(`Cloud Run is not documented as fallback/underlying runtime.`);
+  }
+
+  const hasAgentPatchRule = agents.includes('Every file-changing coding-agent task MUST bump the patch version');
+  const hasAgentCommitRule = agents.includes('must output an English commit message');
+  if (hasAgentPatchRule && hasAgentCommitRule) {
+    printSuccess(`AGENTS.md correctly dictates patch bump rules and English commit message requirements for agents.`);
+  } else {
+    printFail(`AGENTS.md is missing patch bump rule or English commit message requirement.`);
   }
 
   const hasV2NamespaceDocs = readme.includes('githubPagesAuditorV2') && agents.includes('githubPagesAuditorV2');
@@ -329,7 +338,8 @@ try {
     'future work: ' + 'GitHub OAuth',
     'future work: ' + 'GitHub App',
     'future work: ' + 'Gemini/AI',
-    '1.5.0'
+    '1.5.0',
+    '1.5.1'
   ];
 
   for (const f of filesToScanForStale) {

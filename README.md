@@ -1,5 +1,5 @@
 # GitHub Pages Auditor
-Version: `1.5.1` (Public No-Auth E2E & Patch Version Governance Baseline)
+Version: `1.5.2` (Patch Governance Closure & Stale PR Cleanup Baseline)
 
 GitHub Pages Auditor is a multi-user web application that audits GitHub Pages settings across repositories accessible to fine-grained or classic Personal Access Tokens (PATs). It displays custom domain configuration status, HTTPS certificate state, and Pages deployment methods securely without modifying any settings.
 

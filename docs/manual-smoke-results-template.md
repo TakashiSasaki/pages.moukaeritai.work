@@ -1,10 +1,10 @@
-# Manual Smoke Testing Results Template (Milestone 1.5.1)
+# Manual Smoke Testing Results Template (Milestone 1.5.2)
 
 Use this document to log manual smoke testing results prior to marking a production candidate ready for the **https://pages.moukaeritai.work** environment.
 
 - **Target Public URL**: `https://pages.moukaeritai.work`
 - **Fallback Infrastructure URL**: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
-- **App Version**: `1.5.1`
+- **App Version**: `1.5.2`
 
 ---
 

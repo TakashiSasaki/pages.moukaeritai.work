@@ -1,5 +1,5 @@
 # External Consumer Guide
-Version: `1.5.1` (Public No-Auth E2E & Patch Version Governance Baseline)
+Version: `1.5.2` (Public No-Auth E2E & Patch Version Governance Baseline)
 
 This document provides instructions for external systems and users consuming data exported by the GitHub Pages Auditor. The application supports exporting audit data in JSON and CSV formats.
 

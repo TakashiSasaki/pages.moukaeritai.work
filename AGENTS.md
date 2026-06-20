@@ -59,7 +59,12 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Cloud Functions deploy command (if used later): `firebase deploy --only functions:gpaV2Api`
 
 ## Version Management
-- Versioning is strictly managed via the standard `package.json` `"version"` field.
+- Versioning is strictly managed via the standard `package.json` `"version"` field, which acts as the absolute source of truth.
+- Every file-changing coding-agent task MUST bump the patch version.
+- Docs and runtime version references must align with `package.json`.
+- The coding agent must output an English commit message at the end of any file-changing task.
+- Generated schema files must not be edited manually.
+- The release gate (`npm run release:check`) must remain no-network and deterministic.
 - The version string (e.g. `1.0.0`) is exported dynamically in the project build pipeline via Vite plugin definitions (`__APP_VERSION__` mapping).
 - Before each major baseline or feature completion, the package version should be explicitly bumped.
 - UI elements (like headers, footers) read the current version dynamically rather than hardcoding it.
@@ -113,7 +118,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - `schemas/` - Export JSON schemas.
 
 ## Current Implementation Status
-- Milestone 1.5.1 (Public No-Auth E2E & Patch Version Governance Baseline) is fully completed. All core backend, shared, export, anonymous lifecycles, and path modules are hardened and verified via automated test suites.
+- Milestone 1.5.2 (Patch Governance Closure & Stale PR Cleanup Baseline) is fully completed. All core backend, shared, export, anonymous lifecycles, and path modules are hardened and verified via automated test suites.
 - Added explicit environment validation modules for frontend (`src/lib/env.ts`) and backend (`server/env.ts`) checking configuration completeness without crashing runtime operations.
 - Extracted and formalized firestore paths into a decoupled module `src/lib/firestorePaths.ts`, fully tested in the suite.
 - Established a complete, isolated, and secure security ruleset in `firestore.rules` (pointed by `firebase.json`), fully verified using rule simulation tests (`tests/rules.test.ts`).
@@ -155,7 +160,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Created `scripts/validateExamples.js` to continuously assert compliance for V2 and V2 exported samples alongside `npm run examples:validate`.
 - Defined `docs/external-consumer-guide.md` with strict interoperability requirements, ensuring registries and runtime retrievals remain out-of-scope.
 - Completely verified coverage of V2 deeply-nested `findings` taxonomy reflecting GitHub Pages DNS/SSL statuses.
-- Advanced primary build threshold to `1.5.1 (Public No-Auth E2E & Patch Version Governance Baseline)` with patch version governance and public no-auth E2E validation controls.
+- Advanced primary build threshold to `1.5.2 (Patch Governance Closure & Stale PR Cleanup Baseline)` with patch version governance and public no-auth E2E validation controls.
 - Documented active Custom Domain `pages.moukaeritai.work`.
 - Documented icon/site metadata fetching feature representing best-effort non-blocking metadata audit findings.
 - Hardened release checks and documentation consistency checks.

@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Cloud Run Operations Manual
-Version: `1.5.1` (Public No-Auth E2E & Patch Version Governance Baseline)
+Version: `1.5.2` (Public No-Auth E2E & Patch Version Governance Baseline)
 
 This document outlines standard operating procedures, architectural summaries, and verification guides for the production container runtime deployed on Google Cloud Run.
 
