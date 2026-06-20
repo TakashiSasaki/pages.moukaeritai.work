@@ -341,6 +341,7 @@ function AppContent() {
         <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col overflow-hidden">
           <Routes>
             <Route path="/launcher" element={<LauncherPage />} />
+            <Route path="/launcher-preview" element={<Dashboard />} />
             <Route path="/" element={<Dashboard />} />
             <Route path="/report" element={<Dashboard />} />
             <Route path="/json" element={<Dashboard />} />
@@ -349,6 +350,7 @@ function AppContent() {
             <Route path="/results/:auditId/report" element={<Dashboard />} />
             <Route path="/results/:auditId/json" element={<Dashboard />} />
             <Route path="/results/:auditId/schema" element={<Dashboard />} />
+            <Route path="/results/:auditId/launcher" element={<Dashboard />} />
           </Routes>
         </main>
         <footer className="shrink-0 w-full bg-white border-t border-slate-200 py-3 mt-auto">

@@ -119,11 +119,13 @@ firebase deploy --only firestore:rules
 8.  **No Gemini/AI Integration**: Google Gemini, `@google/genai` libraries, or any artificial intelligence models/SDKs are strictly out of scope. The application does not use artificial intelligence, LLM generation, or cognitive agents for auditing, authentication, persistence, deployment, or export. It is strictly client-and-backend procedural code.
 
 
-## Launcher (`/launcher`)
-The **Launcher** page displays a user's detected GitHub Pages sites from their most recent audit.
+## Launcher & Dashboard Preview
+The **Launcher** surface displays a user's detected GitHub Pages sites, sharing a common `LauncherGrid` component.
+- **Standalone Page (`/launcher`)**: Renders sites from the latest saved audit.
+- **Dashboard Preview Tab (`/results/:auditId/launcher`)**: Previews sites using the currently loaded Dashboard audit result.
 - Tiles open target URLs safely in new windows using `noopener noreferrer`.
 - Only Pages-enabled sites with safe `http:` or `https:` URLs are included.
-- Tile ordering can be customized and is persisted in Firestore under `settings/launcherLayout`.
+- Tile ordering can be customized from either surface and is persisted in Firestore under `settings/launcherLayout`.
 - The app stores only layout metadata (IDs and order), not duplicated audit payloads.
 - Icons are generated locally based on the app's initial; no external favicon service is used.
 - Layout stores the ordered array of IDs rather than absolute x/y coordinates.

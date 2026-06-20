@@ -9,6 +9,9 @@ import { useAuth } from '../AuthContext';
 import Ajv from 'ajv';
 import schema from '@/schemas/github-pages-auditor-export-v2.schema.json';
 import { getEnvironmentName, getAuditCollectionPath } from '../lib/firestorePaths';
+import LauncherGrid from './LauncherGrid';
+import { useLauncherLayout } from '../hooks/useLauncherLayout';
+import { useLauncherSitesFromResults } from '../hooks/useLauncherSitesFromResults';
 import { 
   Play, 
   Key, 
@@ -109,27 +112,49 @@ export default function Dashboard() {
   const [validationResult, setValidationResult] = useState<{ valid: boolean; errors?: any[] | null } | null>(null);
   const [isValidatingSchema, setIsValidatingSchema] = useState(false);
   const location = useLocation();
+  const isLauncherPreview = location.pathname.endsWith('/launcher') || location.pathname === '/launcher-preview';
+
   const activeTab = location.pathname.endsWith('/report') 
     ? 'details' 
     : location.pathname.endsWith('/json') 
       ? 'json' 
       : location.pathname.endsWith('/schema') 
         ? 'schema' 
-        : 'summary';
+        : isLauncherPreview
+          ? 'launcher'
+          : 'summary';
 
-  const handleTabChange = (tab: 'summary' | 'details' | 'json' | 'schema') => {
+  const handleTabChange = (tab: 'summary' | 'details' | 'json' | 'schema' | 'launcher') => {
     let basePath = auditId ? `/results/${auditId}` : '';
-    if (!basePath) basePath = '/';
+    if (!basePath) basePath = '';
     
     if (tab === 'summary') {
-      navigate(basePath);
-    } else if (tab === 'details') {
-      navigate(basePath === '/' ? '/report' : `${basePath}/report`);
-    } else if (tab === 'json') {
-      navigate(basePath === '/' ? '/json' : `${basePath}/json`);
-    } else if (tab === 'schema') {
-      navigate(basePath === '/' ? '/schema' : `${basePath}/schema`);
+      navigate(basePath || '/');
+    } else if (tab === 'launcher') {
+      navigate(basePath ? `${basePath}/launcher` : '/launcher-preview');
+    } else {
+      navigate(`${basePath}/${tab === 'details' ? 'report' : tab}`);
     }
+  };
+
+  const env = getEnvironmentName(import.meta.env.MODE);
+  const isAnonymous = !!user?.isAnonymous;
+  const { orderedSiteIds, saving: layoutSaving, saveWarning, saveOrder, clearWarning } = useLauncherLayout(user?.uid, isAnonymous, env);
+  const { sites, defaultOrderedSiteIds } = useLauncherSitesFromResults(results, orderedSiteIds);
+
+  const handleLauncherMove = async (index: number, direction: -1 | 1) => {
+    if ((direction === -1 && index === 0) || (direction === 1 && index === sites.length - 1)) return;
+    const newSites = [...sites];
+    const temp = newSites[index];
+    newSites[index] = newSites[index + direction];
+    newSites[index + direction] = temp;
+
+    await saveOrder(newSites.map(s => s.id));
+  };
+
+  const handleLauncherReset = async () => {
+    if (!user || isAnonymous) return;
+    await saveOrder(defaultOrderedSiteIds);
   };
 
   // Memoized JSON export string and tokenized elements to address extreme latency issues
@@ -1027,6 +1052,12 @@ export default function Dashboard() {
               >
                 Schema
               </button>
+              <button
+                onClick={() => handleTabChange('launcher')}
+                className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'launcher' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Launcher
+              </button>
             </div>,
             document.getElementById('navbar-center-slot')!
           )}
@@ -1059,6 +1090,12 @@ export default function Dashboard() {
                     className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'schema' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                   >
                     Schema
+                  </button>
+                  <button
+                    onClick={() => handleTabChange('launcher')}
+                    className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${activeTab === 'launcher' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Launcher
                   </button>
                 </div>
 
@@ -1545,6 +1582,22 @@ export default function Dashboard() {
 
               {/* High-density code preview with virtualization to prevent blocking main thread */}
               <VirtualizedCodeViewer code={schemaString} />
+            </div>
+          )}
+
+          {activeTab === 'launcher' && (
+            <div className="flex-1 overflow-hidden flex flex-col bg-white rounded-xl border border-gray-200 animate-fade-in relative">
+              <LauncherGrid
+                sites={sites}
+                saving={layoutSaving}
+                saveWarning={!!saveWarning}
+                emptyTitle="No GitHub Pages sites detected."
+                emptyMessage="Your currently loaded audit has no valid Pages sites. Adjust your scope or run a new audit."
+                onMove={handleLauncherMove}
+                onReset={handleLauncherReset}
+                showReset={true}
+                readOnly={isAnonymous}
+              />
             </div>
           )}
         </div>

@@ -129,11 +129,13 @@ First Export Example (Minimal):
 }
 ```
 
-## Launcher (`/launcher`)
-The **Launcher** page displays a user's detected GitHub Pages sites from their most recent audit.
+## Launcher & Dashboard Preview
+The **Launcher** surface displays a user's detected GitHub Pages sites, sharing a common `LauncherGrid` component.
+- **Standalone Page (`/launcher`)**: Renders sites from the latest saved audit.
+- **Dashboard Preview Tab (`/results/:auditId/launcher`)**: Previews sites using the currently loaded Dashboard audit result.
 - Tiles open target URLs safely in new windows using `noopener noreferrer`.
 - Only Pages-enabled sites with safe `http:` or `https:` URLs are included.
-- Tile ordering can be customized and is persisted in Firestore under `settings/launcherLayout`.
+- Tile ordering can be customized from either surface and is persisted in Firestore under `settings/launcherLayout`.
 - The app stores only layout metadata (IDs and order), not duplicated audit payloads.
 - Icons are generated locally based on the app's initial; no external favicon service is used.
 - Layout stores the ordered array of IDs rather than absolute x/y coordinates.

@@ -40,15 +40,27 @@ describe('Documentation Consistency Diagnostics', () => {
   it('README.md should contain launcher documentation', () => {
     const content = fs.readFileSync(path.join(process.cwd(), 'README.md'), 'utf-8');
     assert.ok(content.includes('/launcher'), 'README.md does not contain /launcher');
+    assert.ok(content.includes('/results/:auditId/launcher'), 'README.md does not contain /results/:auditId/launcher');
     assert.ok(content.includes('settings/launcherLayout'), 'README.md does not contain settings/launcherLayout');
     assert.ok(content.includes('external favicon'), 'README.md does not contain external favicon mention');
   });
 
-  it('LauncherPage.tsx should be safely loading from data.results', () => {
-    const content = fs.readFileSync(path.join(process.cwd(), 'src/components/LauncherPage.tsx'), 'utf-8');
-    assert.ok(!content.includes("getAuditCollectionPath('production'"), 'LauncherPage must not hardcode production environment');
-    assert.ok(!content.includes("data.repositories"), 'LauncherPage must read from results, not data.repositories');
-    assert.ok(content.includes("data.results"), 'LauncherPage must read from data.results');
+  it('App routes must contain Launcher routes', () => {
+    const content = fs.readFileSync(path.join(process.cwd(), 'src/App.tsx'), 'utf-8');
+    assert.ok(content.includes('/launcher'), 'App.tsx does not contain /launcher');
+    assert.ok(content.includes('/results/:auditId/launcher'), 'App.tsx does not contain /results/:auditId/launcher');
+  });
+
+  it('Dashboard should contain the label Launcher', () => {
+    const content = fs.readFileSync(path.join(process.cwd(), 'src/components/Dashboard.tsx'), 'utf-8');
+    assert.ok(content.includes('>\n                Launcher\n              </button>'), 'Dashboard.tsx does not contain Launcher label');
+  });
+
+  it('useLatestAuditResults should be safely loading from data.results', () => {
+    const content = fs.readFileSync(path.join(process.cwd(), 'src/hooks/useLatestAuditResults.ts'), 'utf-8');
+    assert.ok(!content.includes("getAuditCollectionPath('production'"), 'Must not hardcode production environment');
+    assert.ok(!content.includes("data.repositories"), 'Must read from results, not data.repositories');
+    assert.ok(content.includes("data.results"), 'Must read from data.results');
   });
 
   it('No stale V1 or draft V2 wording remains in code, docs, tests, and scripts', () => {
