@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Custom Domain Assignment Runbook Summary (pages.moukaeritai.work)
-Version: `1.5.2` (Public No-Auth E2E & Patch Version Governance Baseline)
+Version: `1.5.3` (Repository Hygiene & Baseline Consistency Closure)
 
 This runbook outlines the operational steps that have been successfully executed to assign the production custom domain `pages.moukaeritai.work` to the existing Cloud Run service.
 
@@ -8,7 +8,7 @@ This runbook outlines the operational steps that have been successfully executed
 ## 1. Current State (Active & Canonical)
 *   Custom domain (`pages.moukaeritai.work`) is fully active and serves as the primary canonical URL.
 *   Cloud Run URL (`https://github-pages-auditor-1042140630327.asia-east1.run.app`) remains active and serves as a reliable fallback.
-*   The system has achieved Milestone 1.5.2.
+*   The system has achieved Milestone 1.5.3.
 
 ## 2. Target State achieved
 *   `https://pages.moukaeritai.work` successfully serves the React SPA and Express API.

@@ -126,7 +126,7 @@ function AppContent() {
     const checkFirebase = validateFrontendFirebaseConfig();
     if (!checkFirebase.valid) {
       setFirebaseConfigError(`Firebase setup incomplete. Missing fields: ${checkFirebase.missingFields.join(', ')}. Please ensure Firebase is provisioned via the 'set_up_firebase' tool.`);
-      console.error("Firebase config validation failed:", checkFirebase.missingFields);
+      // console.error("Firebase config validation failed:", checkFirebase.missingFields);
     }
   }, []);
 

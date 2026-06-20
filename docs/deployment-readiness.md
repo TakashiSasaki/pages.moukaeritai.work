@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Deployment Readiness Baseline
-Version: `1.5.2` (Public No-Auth E2E & Patch Version Governance Baseline)
+Version: `1.5.3` (Repository Hygiene & Baseline Consistency Closure)
 
 This document formalizes the production deployment status, custom domain readiness, and infrastructure requirements for the **GitHub Pages Auditor** application.
 
@@ -26,7 +26,7 @@ The application is already running on **Google Cloud Run** in containerized prod
 *   **Status**: Active & Live
 *   **Active Custom Domain**: `pages.moukaeritai.work`
 *   **Custom Domain Status**: Active and canonical.
-*   **Current Milestone**: Milestone 1.5.2 (Operational Stability & Anonymous Session Lifecycle Baseline)
+*   **Current Milestone**: Milestone 1.5.3 (Repository Hygiene & Baseline Consistency Closure)
 
 ### Deployment Runtime Details:
 *   **Container Image**: Dual-stage light Alpine build with Node.js 20.

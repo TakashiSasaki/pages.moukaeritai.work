@@ -4,7 +4,7 @@
   "exportedAt": "2026-06-19T04:05:00Z",
   "application": {
     "name": "GitHub Pages Auditor",
-    "version": "1.5.2",
+    "version": "1.5.3",
     "environment": "production"
   },
   "auditRun": {
