@@ -1,6 +1,6 @@
 import React from 'react';
 import { LauncherSite } from '../lib/launcherSites';
-import { AlertCircle, ChevronLeft, ChevronRight, RotateCcw, ExternalLink, Database, Loader2 } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, RotateCcw, ExternalLink, Database, Loader2, Maximize2, Minimize2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export interface LauncherGridProps {
@@ -66,6 +66,159 @@ function LauncherSiteIcon({ site }: { site: LauncherSite }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+interface LauncherCardItemProps {
+  site: LauncherSite;
+  index: number;
+  sitesLength: number;
+  saving: boolean;
+  readOnly: boolean;
+  onMove?: (index: number, direction: -1 | 1) => void | Promise<void>;
+}
+
+function LauncherCardItem({
+  site,
+  index,
+  sitesLength,
+  saving,
+  readOnly,
+  onMove
+}: LauncherCardItemProps) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  if (!isExpanded) {
+    // 縮小されたコンパクトカード (アイコン + ドメイン名だけの小さなもの、デフォルト)
+    return (
+      <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl shadow-xs hover:shadow-md hover:border-indigo-300/80 hover:bg-white transition-all duration-300 p-3.5 flex items-center group relative overflow-hidden min-h-[76px] w-full">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/0 via-transparent to-slate-50/0 group-hover:from-indigo-50/20 group-hover:to-purple-50/10 transition-colors duration-500 pointer-events-none"></div>
+        
+        <div className="flex items-center gap-3 w-full pr-8 relative z-10 min-w-0">
+          <div className="shrink-0 transform scale-90 origin-left">
+            <LauncherSiteIcon site={site} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-slate-800 text-sm truncate" title={site.name}>
+              {site.name}
+            </h3>
+            <a
+              href={site.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-500 hover:text-blue-700 font-medium hover:underline truncate mt-0.5 flex items-center gap-1 group/link max-w-full"
+              title={site.url}
+            >
+              <span className="truncate">{site.hostname}</span>
+              <ExternalLink className="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity shrink-0" />
+            </a>
+          </div>
+        </div>
+
+        {/* 右上の隅に大きくするトグルボタン */}
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors z-20"
+          title="詳細を表示"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  // 展開されたフル情報カード (従来の全バッジ、並び替え、リッチな詳細)
+  return (
+    <div className="bg-white/90 backdrop-blur-sm border-2 border-indigo-200 rounded-2xl shadow-md hover:shadow-xl hover:border-indigo-300 transition-all duration-300 p-5 flex flex-col group relative overflow-hidden w-full">
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/20 via-transparent to-purple-50/10 group-hover:from-indigo-100/30 group-hover:to-purple-100/20 transition-colors duration-500 pointer-events-none"></div>
+      
+      <div className="flex justify-between items-start mb-4 relative z-10">
+        <LauncherSiteIcon site={site} />
+        
+        <div className="flex items-center gap-1.5 z-20">
+          {!readOnly && onMove && (
+            <div className="flex gap-0.5 bg-slate-50 border border-slate-100 rounded-lg p-0.5">
+              <button
+                onClick={() => onMove(index, -1)}
+                disabled={index === 0 || saving}
+                className="p-1 text-slate-400 hover:text-slate-800 hover:bg-white rounded-md disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                title="Move earlier"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onMove(index, 1)}
+                disabled={index === sitesLength - 1 || saving}
+                className="p-1 text-slate-400 hover:text-slate-800 hover:bg-white rounded-md disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                title="Move later"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* 右上の隅に小さくする (閉じる) ボタン */}
+          <button
+            onClick={() => setIsExpanded(false)}
+            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors"
+            title="詳細を閉じる"
+          >
+            <Minimize2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-4 flex-grow relative z-10">
+        <a
+          href={site.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-slate-900 text-lg hover:text-blue-600 transition-colors inline-block break-all group/link"
+        >
+          {site.name}
+          <ExternalLink className="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-opacity inline ml-1 align-text-bottom" />
+        </a>
+        <p className="text-xs text-slate-500 break-all mt-1" title={site.ownerRepo}>{site.ownerRepo}</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-slate-100 relative z-10">
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 truncate max-w-[140px]" title={site.hostname}>
+          {site.hostname}
+        </span>
+        {site.httpsState === 'enforced' && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">
+            HTTPS
+          </span>
+        )}
+        {site.deploymentMethod === 'workflow' && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+            Workflow
+          </span>
+        )}
+        {site.isPwa ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-2xs">
+            PWA対応
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-400 border border-slate-200">
+            PWA非対応
+          </span>
+        )}
+        {site.pwaIconUrl ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100" title={site.pwaIconUrl}>
+            PWAアイコン
+          </span>
+        ) : site.faviconUrl ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100" title={site.faviconUrl}>
+            ファビコン
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-normal bg-slate-100 text-slate-400 border border-slate-200">
+            アイコン未検出
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -137,85 +290,17 @@ export default function LauncherGrid({
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
           {sites.map((site, index) => (
-            <div key={site.id} className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1.5 hover:scale-[1.02] hover:border-indigo-300 transition-all duration-300 p-5 flex flex-col group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/0 via-transparent to-purple-50/0 group-hover:from-indigo-100/50 group-hover:to-purple-100/50 transition-colors duration-500 pointer-events-none"></div>
-              <div className="flex justify-between items-start mb-4 relative z-10">
-                <LauncherSiteIcon site={site} />
-                {!readOnly && onMove && (
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => onMove(index, -1)}
-                      disabled={index === 0 || saving}
-                      className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md disabled:opacity-30 disabled:hover:bg-transparent"
-                      title="Move earlier"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => onMove(index, 1)}
-                      disabled={index === sites.length - 1 || saving}
-                      className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md disabled:opacity-30 disabled:hover:bg-transparent"
-                      title="Move later"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="mb-4 flex-grow">
-                <a
-                  href={site.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold text-slate-900 text-lg hover:text-blue-600 transition-colors inline-block break-all group/link"
-                >
-                  {site.name}
-                  <ExternalLink className="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-opacity inline ml-1 align-text-bottom" />
-                </a>
-                <p className="text-xs text-slate-500 break-all mt-1" title={site.ownerRepo}>{site.ownerRepo}</p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-slate-100">
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 truncate max-w-[140px]" title={site.hostname}>
-                  {site.hostname}
-                </span>
-                {site.httpsState === 'enforced' && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">
-                    HTTPS
-                  </span>
-                )}
-                {site.deploymentMethod === 'workflow' && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-                    Workflow
-                  </span>
-                )}
-                {site.isPwa ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-2xs">
-                    PWA対応
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-400 border border-slate-200">
-                    PWA非対応
-                  </span>
-                )}
-                {site.pwaIconUrl ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100" title={site.pwaIconUrl}>
-                    PWAアイコン
-                  </span>
-                ) : site.faviconUrl ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100" title={site.faviconUrl}>
-                    ファビコン
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-normal bg-slate-100 text-slate-400 border border-slate-200">
-                    アイコン未検出
-                  </span>
-                )}
-              </div>
-            </div>
+            <LauncherCardItem
+              key={site.id}
+              site={site}
+              index={index}
+              sitesLength={sites.length}
+              saving={saving}
+              readOnly={readOnly}
+              onMove={onMove}
+            />
           ))}
         </div>
       </div>
