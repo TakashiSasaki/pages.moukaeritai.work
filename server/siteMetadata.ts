@@ -140,14 +140,11 @@ export async function fetchSiteMetadata(pageUrl: string): Promise<SiteMetadata> 
           }
         }
       } catch (err: any) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        console.info(`Manifest fetch skipped for ${pageUrl} at ${absManifestUrl} (${errMsg})`);
+        // Safe silent fallback or debug log
       }
     }
   } catch (error: any) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    console.info(`Metadata fetch skipped for ${pageUrl} (${errMsg})`);
-    // Graceful fallback to default favicon path
+    // Safe silent fallback or debug log
     result.faviconUrl = resolveUrl(pageUrl, '/favicon.ico');
   }
 
