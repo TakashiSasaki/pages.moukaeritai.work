@@ -3,6 +3,12 @@
  * @param mode Vite environment mode (e.g., import.meta.env.MODE)
  */
 export function getEnvironmentName(mode: string): string {
+  // Guard: If we are on the known production custom domain, always return production
+  if (typeof window !== 'undefined' && 
+      (window.location.hostname === 'pages.moukaeritai.work' || 
+       window.location.hostname === 'github-pages-auditor-1042140630327.asia-east1.run.app')) {
+    return 'production';
+  }
   return mode === 'production' ? 'production' : 'development';
 }
 

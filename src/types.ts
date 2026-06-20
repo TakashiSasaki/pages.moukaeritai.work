@@ -70,6 +70,14 @@ export interface RepositoryResult {
   httpsCertificateStatus: HttpsCertificateStatus;
 
   pagesSettingsUrl: string;
+
+  // Metadata & PWA Status
+  faviconUrl?: string | null;
+  manifestUrl?: string | null;
+  isPwa?: boolean;
+  pwaIconUrl?: string | null;
+  pwaName?: string | null;
+  pwaDisplayMode?: string | null;
   
   // Potential Error state
   errorClassification?: string | null;

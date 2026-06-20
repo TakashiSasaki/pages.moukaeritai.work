@@ -315,7 +315,7 @@ describe('GitHub API Security & Proxy Shield', () => {
     assert.strictEqual(capturedReq.url, 'https://api.github.com/user');
     assert.strictEqual(capturedReq.headers.get('Authorization'), 'Bearer ghp_secret_test_token');
     assert.strictEqual(capturedReq.headers.get('Accept'), 'application/vnd.github+json');
-    assert.strictEqual(capturedReq.headers.get('X-GitHub-Api-Version'), '2026-03-10');
+    assert.strictEqual(capturedReq.headers.get('X-GitHub-Api-Version'), '2022-11-28');
   });
 });
 describe('CSV formulas injection defense', () => {

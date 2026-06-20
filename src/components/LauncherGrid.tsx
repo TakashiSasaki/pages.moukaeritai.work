@@ -19,6 +19,29 @@ export interface LauncherGridProps {
   readOnly?: boolean;
 }
 
+function LauncherSiteIcon({ site }: { site: LauncherSite }) {
+  const [error, setError] = React.useState(false);
+  const iconUrl = site.pwaIconUrl || site.faviconUrl;
+
+  if (iconUrl && !error) {
+    return (
+      <img
+        src={iconUrl}
+        alt=""
+        className="w-12 h-12 object-contain rounded-xl select-none shrink-0 border border-slate-200 bg-white p-1 transition-transform group-hover:scale-105 group-hover:rotate-3 shadow-xs"
+        onError={() => setError(true)}
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+
+  return (
+    <div className="w-12 h-12 bg-slate-100 group-hover:bg-indigo-50 group-hover:text-indigo-600 rounded-xl flex items-center justify-center text-slate-600 font-bold text-xl uppercase tracking-wider select-none shrink-0 border border-slate-200 group-hover:border-indigo-200 transition-colors duration-300 group-hover:rotate-3">
+      {site.name.charAt(0)}
+    </div>
+  );
+}
+
 export default function LauncherGrid({
   sites,
   saving = false,
@@ -91,9 +114,7 @@ export default function LauncherGrid({
             <div key={site.id} className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1.5 hover:scale-[1.02] hover:border-indigo-300 transition-all duration-300 p-5 flex flex-col group relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/0 via-transparent to-purple-50/0 group-hover:from-indigo-100/50 group-hover:to-purple-100/50 transition-colors duration-500 pointer-events-none"></div>
               <div className="flex justify-between items-start mb-4 relative z-10">
-                <div className="w-12 h-12 bg-slate-100 group-hover:bg-indigo-50 group-hover:text-indigo-600 rounded-xl flex items-center justify-center text-slate-600 font-bold text-xl uppercase tracking-wider select-none shrink-0 border border-slate-200 group-hover:border-indigo-200 transition-colors duration-300 group-hover:rotate-3">
-                  {site.name.charAt(0)}
-                </div>
+                <LauncherSiteIcon site={site} />
                 {!readOnly && onMove && (
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
@@ -141,6 +162,28 @@ export default function LauncherGrid({
                 {site.deploymentMethod === 'workflow' && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
                     Workflow
+                  </span>
+                )}
+                {site.isPwa ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-2xs">
+                    PWA対応
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-400 border border-slate-200">
+                    PWA非対応
+                  </span>
+                )}
+                {site.pwaIconUrl ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100" title={site.pwaIconUrl}>
+                    PWAアイコン
+                  </span>
+                ) : site.faviconUrl ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100" title={site.faviconUrl}>
+                    ファビコン
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-normal bg-slate-100 text-slate-400 border border-slate-200">
+                    アイコン未検出
                   </span>
                 )}
               </div>

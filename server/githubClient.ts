@@ -27,8 +27,8 @@ export async function githubApi(endpoint: string, pat: string, queryParams: any 
 
   const headers = {
     'Accept': 'application/vnd.github+json',
-    'Authorization': `Bearer ${pat}`,
-    'X-GitHub-Api-Version': '2026-03-10',
+    'Authorization': `Bearer ${pat.trim()}`,
+    'X-GitHub-Api-Version': '2022-11-28',
     'User-Agent': 'GitHub-Pages-Auditor'
   };
 

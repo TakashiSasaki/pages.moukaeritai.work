@@ -26,6 +26,8 @@ import {
   classifyHttpsCertificateStatus 
 } from './src/audit/classification';
 
+import { fetchSiteMetadata } from './server/siteMetadata';
+
 // Initialize Firebase Admin using validated settings
 try {
   if (!getApps().length) {
@@ -222,6 +224,20 @@ app.post('/api/audit/run', verifyAuth, async (req, res) => {
         repoResult.httpsCertificateExpiresAt = pagesData.https_certificate?.expires_at || null;
         repoResult.httpsEnforced = pagesData.https_enforced;
         repoResult.pagesHtmlUrl = pagesData.html_url || null;
+
+        if (pagesData.html_url) {
+          try {
+            const meta = await fetchSiteMetadata(pagesData.html_url);
+            repoResult.faviconUrl = meta.faviconUrl;
+            repoResult.manifestUrl = meta.manifestUrl;
+            repoResult.isPwa = meta.isPwa;
+            repoResult.pwaIconUrl = meta.pwaIconUrl;
+            repoResult.pwaName = meta.pwaName;
+            repoResult.pwaDisplayMode = meta.pwaDisplayMode;
+          } catch (e) {
+            console.warn(`Failed to collect site metadata for ${pagesData.html_url}:`, e);
+          }
+        }
 
         const classificationInputs = {
           hasPages: true,

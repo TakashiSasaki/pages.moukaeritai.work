@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ pat })
+      body: JSON.stringify({ pat: pat.trim() })
     });
     
     if (!res.ok) {

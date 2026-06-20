@@ -9,6 +9,10 @@ export interface LauncherSite {
   customDomain: string | null;
   httpsState: 'enforced' | 'not_enforced' | 'certificate_ok' | 'problem_or_unknown' | 'unknown';
   deploymentMethod: string;
+  faviconUrl?: string | null;
+  manifestUrl?: string | null;
+  isPwa?: boolean;
+  pwaIconUrl?: string | null;
 }
 
 export function getLauncherSiteId(repo: RepositoryResult): string {
@@ -67,7 +71,11 @@ export function extractLauncherSites(repositories: RepositoryResult[]): Launcher
       hostname,
       customDomain: repo.cname || null,
       httpsState,
-      deploymentMethod: repo.deploymentMethod || 'unknown'
+      deploymentMethod: repo.deploymentMethod || 'unknown',
+      faviconUrl: repo.faviconUrl,
+      manifestUrl: repo.manifestUrl,
+      isPwa: repo.isPwa,
+      pwaIconUrl: repo.pwaIconUrl
     });
   }
 

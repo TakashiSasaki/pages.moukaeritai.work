@@ -435,7 +435,7 @@ export default function Dashboard() {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
-        'x-temp-pat': pat
+        'x-temp-pat': pat.trim()
       };
 
       const res = await fetch('/api/audit/run', {

@@ -10,7 +10,7 @@ import LauncherPage from './components/LauncherPage';
 import { AuthProvider, useAuth } from './AuthContext';
 import { validateFrontendFirebaseConfig } from './lib/env';
 import { saveLastPath, getLastPath } from './lib/userPrefs';
-import { LogOut, LogIn, UserCircle, Ghost, Key, Save, Loader2, CheckCircle, Github, HelpCircle, X, AlertCircle, Database, ShieldCheck, XCircle, LayoutGrid, List } from 'lucide-react';
+import { LogOut, LogIn, UserCircle, Ghost, Key, Save, Loader2, CheckCircle, Github, HelpCircle, X, AlertCircle, Database, ShieldCheck, XCircle, LayoutGrid, List, Eye, EyeOff } from 'lucide-react';
 
 function AppContent() {
   const { user, loading, signInWithGoogle, signInAsGuest, logout, hasStoredPat, savePatToFirestore } = useAuth();
@@ -24,6 +24,7 @@ function AppContent() {
   const [isSavingPat, setIsSavingPat] = useState(false);
   const [patError, setPatError] = useState<string | null>(null);
   const [patSuccess, setPatSuccess] = useState<string | null>(null);
+  const [showPat, setShowPat] = useState(false);
 
   const [showHeader, setShowHeader] = useState(true);
   const lastScrollY = useRef(0);
@@ -267,16 +268,25 @@ function AppContent() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <input 
-                      type="password" 
-                      placeholder={hasStoredPat ? "Update token..." : "ghp_... or github_pat_..."}
-                      className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded shadow-sm focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-shadow"
-                      value={pat}
-                      onChange={(e) => setPat(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') savePat();
-                      }}
-                    />
+                    <div className="relative flex-1">
+                      <input 
+                        type={showPat ? "text" : "password"} 
+                        placeholder={hasStoredPat ? "Update token..." : "ghp_... or github_pat_..."}
+                        className="w-full text-xs pl-2.5 pr-8 py-1.5 border border-slate-300 rounded shadow-sm focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-shadow"
+                        value={pat}
+                        onChange={(e) => setPat(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') savePat();
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPat(!showPat)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                      >
+                        {showPat ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                     <button 
                       onClick={savePat}
                       disabled={!pat || isSavingPat}
@@ -332,8 +342,8 @@ function AppContent() {
             <div className="px-3 py-2 sm:px-4 sm:py-3">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                <Link to="/" className="text-xl font-semibold tracking-tight text-slate-900 flex items-center gap-2 hover:opacity-80 transition-opacity">
-                  <Github className="w-5 h-5 text-slate-800" />
+                <Link to="/" className="text-xl font-semibold tracking-tight text-slate-900 flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+                  <img src="/icon.svg" alt="App Logo" className="w-6 h-6 drop-shadow-sm" />
                   <span className="truncate">GitHub Pages Auditor</span>
                 </Link>
                 <button 
@@ -406,16 +416,25 @@ function AppContent() {
                           )}
                         </div>
                         <div className="flex gap-2">
-                          <input 
-                            type="password" 
-                            placeholder={hasStoredPat ? "Update token..." : "ghp_... or github_pat_..."}
-                            className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded shadow-sm focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-shadow"
-                            value={pat}
-                            onChange={(e) => setPat(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') savePat();
-                            }}
-                          />
+                          <div className="relative flex-1">
+                            <input 
+                              type={showPat ? "text" : "password"} 
+                              placeholder={hasStoredPat ? "Update token..." : "ghp_... or github_pat_..."}
+                              className="w-full text-xs pl-2.5 pr-8 py-1.5 border border-slate-300 rounded shadow-sm focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-shadow"
+                              value={pat}
+                              onChange={(e) => setPat(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') savePat();
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPat(!showPat)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                            >
+                              {showPat ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
                           <button 
                             onClick={savePat}
                             disabled={!pat || isSavingPat}
