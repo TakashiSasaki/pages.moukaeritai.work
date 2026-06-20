@@ -12,8 +12,8 @@ export function getEnvironmentName(mode: string): string {
 export function getGithubTokenCollectionPath(environment: string, uid: string, isAnonymous: boolean): string {
   const env = environment === 'production' ? 'production' : 'development';
   return isAnonymous
-    ? `githubPagesAuditorV1/${env}/anonymousSessions/${uid}/githubTokens`
-    : `githubPagesAuditorV1/${env}/users/${uid}/githubTokens`;
+    ? `githubPagesAuditorV2/${env}/anonymousSessions/${uid}/githubTokens`
+    : `githubPagesAuditorV2/${env}/users/${uid}/githubTokens`;
 }
 
 /**
@@ -28,7 +28,7 @@ export function getGithubTokenDocPath(environment: string, uid: string, isAnonym
  */
 export function getAuditCollectionPath(environment: string, uid: string): string {
   const env = environment === 'production' ? 'production' : 'development';
-  return `githubPagesAuditorV1/${env}/users/${uid}/audits`;
+  return `githubPagesAuditorV2/${env}/users/${uid}/audits`;
 }
 
 /**
@@ -37,8 +37,8 @@ export function getAuditCollectionPath(environment: string, uid: string): string
 export function getUserSettingsCollectionPath(environment: string, uid: string, isAnonymous: boolean): string {
   const env = environment === 'production' ? 'production' : 'development';
   return isAnonymous
-    ? `githubPagesAuditorV1/${env}/anonymousSessions/${uid}/settings`
-    : `githubPagesAuditorV1/${env}/users/${uid}/settings`;
+    ? `githubPagesAuditorV2/${env}/anonymousSessions/${uid}/settings`
+    : `githubPagesAuditorV2/${env}/users/${uid}/settings`;
 }
 
 /**

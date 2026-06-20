@@ -46,17 +46,17 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 
 ## Firestore Persistence Contract
 - Firestore used: Yes.
-- PATs are securely stored in `githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default` (for persistent users) and `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default` (for anonymous users) via the **Firebase Client SDK directly from the React frontend**.
-- Audit caches are stored in `githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}` via the Client SDK.
-- Last visited paths and user preferences are stored in `githubPagesAuditorV1/{environment}/users/{uid}/settings/{settingId}` and `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/settings/{settingId}` under the `navigation` setting ID.
+- PATs are securely stored in `githubPagesAuditorV2/{environment}/users/{uid}/githubTokens/default` (for persistent users) and `githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default` (for anonymous users) via the **Firebase Client SDK directly from the React frontend**.
+- Audit caches are stored in `githubPagesAuditorV2/{environment}/users/{uid}/audits/{auditId}` via the Client SDK.
+- Last visited paths and user preferences are stored in `githubPagesAuditorV2/{environment}/users/{uid}/settings/{settingId}` and `githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/settings/{settingId}` under the `navigation` setting ID.
 - Security Rules: Client access is tightly secured to `request.auth.uid == uid`. No cross-user access allowed.
 
 ## Cloud Functions Deployment Contract
 - Cloud Functions used: Not used.
 - No Firebase Functions deployment is required.
 - Do not run bare `firebase deploy --only functions` for this app.
-- Cloud Functions prefix (if used later): `gpaV1`
-- Cloud Functions deploy command (if used later): `firebase deploy --only functions:gpaV1Api`
+- Cloud Functions prefix (if used later): `gpaV2`
+- Cloud Functions deploy command (if used later): `firebase deploy --only functions:gpaV2Api`
 
 ## Version Management
 - Versioning is strictly managed via the standard `package.json` `"version"` field.
@@ -95,15 +95,14 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 
 ## JSON Export Schema Contract
 - JSON export schema version: `github-pages-auditor.export.v2`
-- Schema lives in `schemas/github-pages-auditor-export-v2.schema.json` (Full schema implemented).
+- Schema lives in `schemas/github-pages-auditor-export-v2.schema.json`.
 - **TypeScript is the Source of Truth**: The schema types reside in `src/schema/exportTypesV2.ts`.
 - **Generated Artifact**: Schema JSON files are fully generated artifacts. Manual edits to generated schema files are strictly discouraged.
-- Any schema-affecting types change must trigger schema regeneration via `npx ts-json-schema-generator` and validation check via `npm run schema:check`.
-- **Vocabulary & Future V2 Specs**: Full property lists, categories, and raw vs normalized mappings are documented in `docs/export-schema-vocabulary.md`. The nested V2 layout lives in `docs/export-schema-v2.md`.
+- Any schema-affecting types change must trigger schema regeneration via `npm run schema:generate` and validation check via `npm run schema:check`.
+- **Vocabulary & Specs**: Full property lists, categories, and raw vs normalized mappings are documented in `docs/export-schema-vocabulary.md`. The nested layout lives in `docs/export-schema-v2.md`.
 - **Stable Schema Identity Policy**:
   - Every schema has a permanent, static `$id` mapped as a standard URN UUID (`urn:uuid:<uuid-v4>`).
-  - **Version 1 (Flat)** ID: `urn:uuid:ef46fd93-424a-4e2a-8f5b-df97e28b2be1` (optional in exported payload, defined in JSON Schema).
-  - **Version 2 (Current Default)** ID: `urn:uuid:7d0f98be-8cba-49c5-84dc-66914b5da3f2` (required in exported payload, defined in JSON Schema).
+  - **Version 2** ID: `urn:uuid:7d0f98be-8cba-49c5-84dc-66914b5da3f2` (required in exported payload, defined in JSON Schema).
   - Identifiers must **never** be generated or altered dynamically during build, export, test, or run actions.
   - Resolver implementations, registry databases, and remote hosting lookup logic are **explicitly out of scope** in this stack; external clients must treat the URN as a stable opaque identifier.
 
@@ -129,8 +128,8 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
   - `vite.config.ts`: Present
   - `src/lib/firebase.ts`: Present
 - **Rules Path Tenanting**:
-  - Google authenticated users: `githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default`, `githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}`, and `githubPagesAuditorV1/{environment}/users/{uid}/settings/{settingId}`
-  - Anonymous guest users: `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default` and `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/settings/{settingId}`
+  - Google authenticated users: `githubPagesAuditorV2/{environment}/users/{uid}/githubTokens/default`, `githubPagesAuditorV2/{environment}/users/{uid}/audits/{auditId}`, and `githubPagesAuditorV2/{environment}/users/{uid}/settings/{settingId}`
+  - Anonymous guest users: `githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default` and `githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/settings/{settingId}`
   - Restricts access strictly to matching `request.auth.uid == uid` and blocks all other paths, denying generic top-level collections (e.g. `/users`, `/tokens`).
 - **Deploy Command**: `firebase deploy --only firestore:rules` after choosing your active Firebase project.
 - **Rule Verification**: Done via `npx tsx --test tests/rules.test.ts` (runs pre-compiled local sandbox simulations matching rules logic under the standard Node unit runner; does not use or require a full Firebase Local Emulator integration).

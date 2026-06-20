@@ -117,11 +117,11 @@ Do not use generic top-level collections such as:
 
 Use a namespace similar to:
 
-githubPagesAuditorV1/{environment}/users/{uid}
-githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default
-githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}
-githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default
-githubPagesAuditorV1/{environment}/appAuditLogs/{logId}
+githubPagesAuditorV2/{environment}/users/{uid}
+githubPagesAuditorV2/{environment}/users/{uid}/githubTokens/default
+githubPagesAuditorV2/{environment}/users/{uid}/audits/{auditId}
+githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default
+githubPagesAuditorV2/{environment}/appAuditLogs/{logId}
 
 "environment" should be one of:
 
@@ -143,15 +143,15 @@ If Cloud Functions are used, they must not damage existing functions from other 
 
 Rules if Cloud Functions are used:
 
-- Use an app-specific function prefix, such as "gpaV1".
+- Use an app-specific function prefix, such as "gpaV2".
 - Do not use generic function names like "api", "cleanup", "runAudit", or "exportJson".
 - Do not run unrestricted deployment commands against a shared project.
 - Avoid bare "firebase deploy".
 - Avoid "firebase deploy --only functions" unless explicitly approved for this app.
 - Prefer explicit deployment of owned functions only, for example:
 
-firebase deploy --only functions:gpaV1Api
-firebase deploy --only functions:gpaV1Api,functions:gpaV1RunAudit
+firebase deploy --only functions:gpaV2Api
+firebase deploy --only functions:gpaV2Api,functions:gpaV2RunAudit
 
 The Cloud Functions usage, function names, codebase, and deploy commands must be documented in "AGENTS.md".
 

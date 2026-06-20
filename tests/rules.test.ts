@@ -34,7 +34,7 @@ class RulesSimulator {
     assert.ok(content.includes('service cloud.firestore'), 'Rules must declare cloud.firestore service');
 
     // Setup manual mapping matching the live firestore.rules clauses:
-    // 1. match /githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default
+    // 1. match /githubPagesAuditorV2/{environment}/users/{uid}/githubTokens/default
     this.rules.push({
       pattern: /^githubPagesAuditorV1\/([^\/]+)\/users\/([^\/]+)\/githubTokens\/default$/,
       paramMap: { environment: 1, uid: 2 },

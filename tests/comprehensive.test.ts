@@ -350,15 +350,15 @@ describe('Firestore Path Helpers', () => {
 
     // 1. Google user PAT path matches specification
     const patPathGoogle = getGithubTokenDocPath('development', 'user123', false);
-    assert.strictEqual(patPathGoogle, 'githubPagesAuditorV1/development/users/user123/githubTokens/default');
+    assert.strictEqual(patPathGoogle, 'githubPagesAuditorV2/development/users/user123/githubTokens/default');
 
     // 2. Anonymous PAT path matches specification under anonymous session namespace
     const patPathAnon = getGithubTokenDocPath('development', 'anon456', true);
-    assert.strictEqual(patPathAnon, 'githubPagesAuditorV1/development/anonymousSessions/anon456/githubTokens/default');
+    assert.strictEqual(patPathAnon, 'githubPagesAuditorV2/development/anonymousSessions/anon456/githubTokens/default');
 
     // 3. Audit cache path matches specification under tenancy
     const auditPath = getAuditCollectionPath('development', 'user123');
-    assert.strictEqual(auditPath, 'githubPagesAuditorV1/development/users/user123/audits');
+    assert.strictEqual(auditPath, 'githubPagesAuditorV2/development/users/user123/audits');
 
     // 4. Paths do not use generic top-level collections
     assert.ok(!patPathGoogle.startsWith('users/'), 'Paths must not use generic top-level collections');
@@ -577,7 +577,7 @@ describe('CSV Export Regression and Live Data Diagnostics', () => {
     // Assert no secret leakages
     const v2Str = JSON.stringify(v2Export);
     const forbiddenPatterns = [
-      'ghp_', 'github_pat_', 'Bearer', 'githubPagesAuditorV1', 'users/', 'anonymousSessions/'
+      'ghp_', 'github_pat_', 'Bearer', 'githubPagesAuditorV2', 'users/', 'anonymousSessions/'
     ];
     for (const pattern of forbiddenPatterns) {
       assert.ok(!v2Str.includes(pattern), `V2 JSON export must not contain forbidden pattern: ${pattern}`);
@@ -631,7 +631,7 @@ describe('External Consumer Sample File Validation Check', () => {
     const csvContent = fs.readFileSync(path.join(process.cwd(), 'examples/github-pages-auditor-export.sample.csv'), 'utf-8');
 
     const secretShieldPatterns = [
-      'ghp_', 'github_pat_', 'Bearer', 'githubPagesAuditorV1', 'users/', 'anonymousSessions/'
+      'ghp_', 'github_pat_', 'Bearer', 'githubPagesAuditorV2', 'users/', 'anonymousSessions/'
     ];
 
     for (const secret of secretShieldPatterns) {
