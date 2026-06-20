@@ -1240,9 +1240,26 @@ export default function Dashboard() {
                     <Filter className="w-3.5 h-3.5 text-slate-500" />
                     カラム別フィルタリング
                   </span>
-                  <span>
-                    Showing {filteredResults.length} of {results.length} results
-                  </span>
+                  <div className="flex items-center gap-2.5 font-sans">
+                    {(searchQuery || statusFilter !== 'all' || domainFilter !== 'all' || httpsFilter !== 'all') && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setStatusFilter('all');
+                          setDomainFilter('all');
+                          setHttpsFilter('all');
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded text-[10px] font-sans font-semibold transition-colors cursor-pointer"
+                        title="すべてのフィルター状態を解除"
+                      >
+                        <XCircle className="w-3 h-3 text-red-500" />
+                        フィルタ解除
+                      </button>
+                    )}
+                    <span className="font-mono text-[10px] text-gray-500">
+                      Showing {filteredResults.length} of {results.length} results
+                    </span>
+                  </div>
                 </div>
               )}
               <table className="min-w-[960px] w-full divide-y divide-gray-200 font-sans text-xs border-separate border-spacing-0">
@@ -1369,10 +1386,24 @@ export default function Dashboard() {
                   {filteredResults.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-3 py-6 text-center text-gray-500 bg-gray-25">
-                        <div className="max-w-md mx-auto space-y-2 text-center">
+                        <div className="max-w-md mx-auto space-y-3.5 text-center flex flex-col items-center">
                           <AlertCircle className="w-6 h-6 text-gray-300 mx-auto" />
-                          <p className="font-medium text-slate-800 text-xs">No matching repositories found</p>
-                          <p className="text-[10px] text-gray-400">Try loosening your search query or adjusting active filtering options above.</p>
+                          <div className="space-y-1">
+                            <p className="font-medium text-slate-800 text-xs font-sans">No matching repositories found</p>
+                            <p className="text-[10px] text-gray-400 font-sans">Try loosening your search query or adjusting active filtering options above.</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSearchQuery('');
+                              setStatusFilter('all');
+                              setDomainFilter('all');
+                              setHttpsFilter('all');
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 rounded font-sans text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                          >
+                            <XCircle className="w-3.5 h-3.5 text-slate-500" />
+                            すべてのフィルタを解除
+                          </button>
                         </div>
                       </td>
                     </tr>
