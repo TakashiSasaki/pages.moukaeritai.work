@@ -20,24 +20,52 @@ export interface LauncherGridProps {
 }
 
 function LauncherSiteIcon({ site }: { site: LauncherSite }) {
-  const [error, setError] = React.useState(false);
-  const iconUrl = site.pwaIconUrl || site.faviconUrl;
+  const [pwaError, setPwaError] = React.useState(false);
+  const [favError, setFavError] = React.useState(false);
 
-  if (iconUrl && !error) {
+  const showPwa = !!(site.pwaIconUrl && !pwaError);
+  const showFav = !!(site.faviconUrl && !favError);
+
+  if (!showPwa && !showFav) {
     return (
-      <img
-        src={iconUrl}
-        alt=""
-        className="w-12 h-12 object-contain rounded-xl select-none shrink-0 border border-slate-200 bg-white p-1 transition-transform group-hover:scale-105 group-hover:rotate-3 shadow-xs"
-        onError={() => setError(true)}
-        referrerPolicy="no-referrer"
-      />
+      <div className="w-12 h-12 bg-slate-100 group-hover:bg-indigo-50 group-hover:text-indigo-600 rounded-xl flex items-center justify-center text-slate-600 font-bold text-xl uppercase tracking-wider select-none shrink-0 border border-slate-200 group-hover:border-indigo-200 transition-colors duration-300 group-hover:rotate-3">
+        {site.name.charAt(0)}
+      </div>
     );
   }
 
   return (
-    <div className="w-12 h-12 bg-slate-100 group-hover:bg-indigo-50 group-hover:text-indigo-600 rounded-xl flex items-center justify-center text-slate-600 font-bold text-xl uppercase tracking-wider select-none shrink-0 border border-slate-200 group-hover:border-indigo-200 transition-colors duration-300 group-hover:rotate-3">
-      {site.name.charAt(0)}
+    <div className="flex items-end gap-2 shrink-0">
+      {showPwa && (
+        <div className="relative group/pwa">
+          <img
+            src={site.pwaIconUrl!}
+            alt="PWA Icon"
+            className="w-12 h-12 object-contain rounded-xl select-none shrink-0 border border-emerald-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs"
+            onError={() => setPwaError(true)}
+            referrerPolicy="no-referrer"
+          />
+          <span className="absolute -bottom-1 -right-1 bg-emerald-600 text-white text-[8px] font-extrabold px-1 rounded-sm border border-white shadow-2xs select-none">
+            PWA
+          </span>
+        </div>
+      )}
+      {showFav && (
+        <div className="relative group/fav">
+          <img
+            src={site.faviconUrl!}
+            alt="Favicon"
+            className={`${showPwa ? 'w-8 h-8' : 'w-12 h-12'} object-contain rounded-xl select-none shrink-0 border border-slate-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs`}
+            onError={() => setFavError(true)}
+            referrerPolicy="no-referrer"
+          />
+          {showPwa && (
+            <span className="absolute -bottom-0.5 -right-0.5 bg-indigo-500 text-white text-[7px] font-bold px-0.5 rounded-sm border border-white shadow-2xs select-none">
+              FAV
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
