@@ -267,7 +267,7 @@ export function buildJsonExportV2(results: RepositoryResult[], context?: ExportB
 
   const appMeta = {
     name: 'GitHub Pages Auditor',
-    version: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.2.0',
+    version: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.4.0',
     environment: finalContext.appEnvironment || 'dev'
   };
 

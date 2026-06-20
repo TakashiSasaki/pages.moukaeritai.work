@@ -49,51 +49,51 @@
     }
   },
   "firestore": {
-    "/githubPagesAuditorV1/dev/users/{uid}": {
+    "/githubPagesAuditorV2/dev/users/{uid}": {
        "schema": { "$ref": "#/entities/User" },
        "description": "Persistent user profile"
     },
-    "/githubPagesAuditorV1/dev/users/{uid}/githubTokens/{tokenId}": {
+    "/githubPagesAuditorV2/dev/users/{uid}/githubTokens/{tokenId}": {
        "schema": { "$ref": "#/entities/GitHubToken" },
        "description": "PAT storage for persistent users, never read directly by clients"
     },
-    "/githubPagesAuditorV1/dev/users/{uid}/settings/{settingId}": {
+    "/githubPagesAuditorV2/dev/users/{uid}/settings/{settingId}": {
        "schema": { "$ref": "#/entities/UserSetting" },
        "description": "User specific app parameters and history"
     },
-    "/githubPagesAuditorV1/dev/anonymousSessions/{anonymousUid}": {
+    "/githubPagesAuditorV2/dev/anonymousSessions/{anonymousUid}": {
        "schema": { "$ref": "#/entities/AnonymousSession" },
        "description": "Guest session data"
     },
-    "/githubPagesAuditorV1/dev/anonymousSessions/{anonymousUid}/githubTokens/{tokenId}": {
+    "/githubPagesAuditorV2/dev/anonymousSessions/{anonymousUid}/githubTokens/{tokenId}": {
        "schema": { "$ref": "#/entities/GitHubToken" },
        "description": "PAT storage for anonymous users, never read directly by clients"
     },
-    "/githubPagesAuditorV1/dev/anonymousSessions/{anonymousUid}/settings/{settingId}": {
+    "/githubPagesAuditorV2/dev/anonymousSessions/{anonymousUid}/settings/{settingId}": {
        "schema": { "$ref": "#/entities/UserSetting" },
        "description": "Guest specific app parameters and history"
     },
-    "/githubPagesAuditorV1/prod/users/{uid}": {
+    "/githubPagesAuditorV2/prod/users/{uid}": {
        "schema": { "$ref": "#/entities/User" },
        "description": "Persistent user profile"
     },
-    "/githubPagesAuditorV1/prod/users/{uid}/githubTokens/{tokenId}": {
+    "/githubPagesAuditorV2/prod/users/{uid}/githubTokens/{tokenId}": {
        "schema": { "$ref": "#/entities/GitHubToken" },
        "description": "PAT storage for persistent users, never read directly by clients"
     },
-    "/githubPagesAuditorV1/prod/users/{uid}/settings/{settingId}": {
+    "/githubPagesAuditorV2/prod/users/{uid}/settings/{settingId}": {
        "schema": { "$ref": "#/entities/UserSetting" },
        "description": "User specific app parameters and history"
     },
-    "/githubPagesAuditorV1/prod/anonymousSessions/{anonymousUid}": {
+    "/githubPagesAuditorV2/prod/anonymousSessions/{anonymousUid}": {
        "schema": { "$ref": "#/entities/AnonymousSession" },
        "description": "Guest session data"
     },
-    "/githubPagesAuditorV1/prod/anonymousSessions/{anonymousUid}/githubTokens/{tokenId}": {
+    "/githubPagesAuditorV2/prod/anonymousSessions/{anonymousUid}/githubTokens/{tokenId}": {
        "schema": { "$ref": "#/entities/GitHubToken" },
        "description": "PAT storage for anonymous users, never read directly by clients"
     },
-    "/githubPagesAuditorV1/prod/anonymousSessions/{anonymousUid}/settings/{settingId}": {
+    "/githubPagesAuditorV2/prod/anonymousSessions/{anonymousUid}/settings/{settingId}": {
        "schema": { "$ref": "#/entities/UserSetting" },
        "description": "Guest specific app parameters and history"
     }

@@ -1,4 +1,5 @@
 # GitHub Pages Auditor - Cloud Run Operations Manual
+Version: `1.4.0` (Completed & Active)
 
 This document outlines standard operating procedures, architectural summaries, and verification guides for the production container runtime deployed on Google Cloud Run.
 
@@ -7,9 +8,9 @@ This document outlines standard operating procedures, architectural summaries, a
 ## 1. Environment Details
 
 *   **Platform**: Google Cloud Run (Fully Managed Serverless Container Platform)
-*   **Active Live Production URL** (Current canonical URL before activation): `https://github-pages-auditor-1042140630327.asia-east1.run.app`
-*   **Planned Custom Domain** (Future canonical URL after activation): `https://pages.moukaeritai.work`
-    *   *Note: Both URLs may coexist during transition.*
+*   **Primary Canonical URL**: `https://pages.moukaeritai.work`
+*   **Active Fallback Runtime URL**: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
+    *   *Note: Both URLs coexist safely, with pages.moukaeritai.work acting as the canonical entry point.*
 *   **Primary Region**: `asia-east1`
 *   **Runtime Architecture**: Full-stack Node.js Express server acting as both the API server for safe audits proxying and a static server for the compiled React + Vite + Tailwind CSS frontend.
 *   **Startup Command**: `node dist/server.cjs`

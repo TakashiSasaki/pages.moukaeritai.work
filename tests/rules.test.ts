@@ -36,35 +36,35 @@ class RulesSimulator {
     // Setup manual mapping matching the live firestore.rules clauses:
     // 1. match /githubPagesAuditorV2/{environment}/users/{uid}/githubTokens/default
     this.rules.push({
-      pattern: /^githubPagesAuditorV1\/([^\/]+)\/users\/([^\/]+)\/githubTokens\/default$/,
+      pattern: /^githubPagesAuditorV2\/([^\/]+)\/users\/([^\/]+)\/githubTokens\/default$/,
       paramMap: { environment: 1, uid: 2 },
       condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
     });
 
-    // 2. match /githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}
+    // 2. match /githubPagesAuditorV2/{environment}/users/{uid}/audits/{auditId}
     this.rules.push({
-      pattern: /^githubPagesAuditorV1\/([^\/]+)\/users\/([^\/]+)\/audits\/([^\/]+)$/,
+      pattern: /^githubPagesAuditorV2\/([^\/]+)\/users\/([^\/]+)\/audits\/([^\/]+)$/,
       paramMap: { environment: 1, uid: 2, auditId: 3 },
       condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
     });
 
-    // 2b. match /githubPagesAuditorV1/{environment}/users/{uid}/settings/{settingId}
+    // 2b. match /githubPagesAuditorV2/{environment}/users/{uid}/settings/{settingId}
     this.rules.push({
-      pattern: /^githubPagesAuditorV1\/([^\/]+)\/users\/([^\/]+)\/settings\/([^\/]+)$/,
+      pattern: /^githubPagesAuditorV2\/([^\/]+)\/users\/([^\/]+)\/settings\/([^\/]+)$/,
       paramMap: { environment: 1, uid: 2, settingId: 3 },
       condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
     });
 
-    // 3. match /githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default
+    // 3. match /githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default
     this.rules.push({
-      pattern: /^githubPagesAuditorV1\/([^\/]+)\/anonymousSessions\/([^\/]+)\/githubTokens\/default$/,
+      pattern: /^githubPagesAuditorV2\/([^\/]+)\/anonymousSessions\/([^\/]+)\/githubTokens\/default$/,
       paramMap: { environment: 1, uid: 2 },
       condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
     });
 
-    // 3b. match /githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/settings/{settingId}
+    // 3b. match /githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/settings/{settingId}
     this.rules.push({
-      pattern: /^githubPagesAuditorV1\/([^\/]+)\/anonymousSessions\/([^\/]+)\/settings\/([^\/]+)$/,
+      pattern: /^githubPagesAuditorV2\/([^\/]+)\/anonymousSessions\/([^\/]+)\/settings\/([^\/]+)$/,
       paramMap: { environment: 1, uid: 2, settingId: 3 },
       condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
     });
@@ -101,55 +101,55 @@ describe('Firestore Rules Simulation Diagnostics', () => {
 
   it('allows authenticated users to read/write their own Google user token', () => {
     const auth = { uid: 'userA' };
-    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userA/githubTokens/default', auth);
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/users/userA/githubTokens/default', auth);
     assert.strictEqual(allowed, true, 'User A should read/write their own token');
   });
 
   it('allows authenticated users to read/write their own audits', () => {
     const auth = { uid: 'userA' };
-    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userA/audits/audit123', auth);
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/users/userA/audits/audit123', auth);
     assert.strictEqual(allowed, true, 'User A should read/write their own audit');
   });
 
   it('allows anonymous users to read/write their own guest token', () => {
     const auth = { uid: 'anonUID' };
-    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/anonymousSessions/anonUID/githubTokens/default', auth);
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/anonymousSessions/anonUID/githubTokens/default', auth);
     assert.strictEqual(allowed, true, 'Anonymous User should read/write their own guest token');
   });
 
   it('denies User A from reading or writing User B tokens (cross-tenant isolation)', () => {
     const auth = { uid: 'userA' };
-    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userB/githubTokens/default', auth);
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/users/userB/githubTokens/default', auth);
     assert.strictEqual(allowed, false, 'User A must not access user B token');
   });
 
   it('denies User A from reading or writing User B audits (cross-tenant isolation)', () => {
     const auth = { uid: 'userA' };
-    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userB/audits/audit123', auth);
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/users/userB/audits/audit123', auth);
     assert.strictEqual(allowed, false, 'User A must not access user B audits');
   });
 
   it('allows authenticated users to read/write their own settings', () => {
     const auth = { uid: 'userA' };
-    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userA/settings/navigation', auth);
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/users/userA/settings/navigation', auth);
     assert.strictEqual(allowed, true, 'User A should read/write their own settings');
   });
 
   it('allows anonymous guests to read/write their own session settings', () => {
     const auth = { uid: 'anon123' };
-    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/anonymousSessions/anon123/settings/navigation', auth);
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/anonymousSessions/anon123/settings/navigation', auth);
     assert.strictEqual(allowed, true, 'Anonymous User should read/write their own settings');
   });
 
   it('denies User A from reading or writing User B settings (cross-tenant isolation)', () => {
     const auth = { uid: 'userA' };
-    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userB/settings/navigation', auth);
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/users/userB/settings/navigation', auth);
     assert.strictEqual(allowed, false, 'User A must not access user B settings');
   });
 
   it('denies access when user is unauthenticated', () => {
     const auth = { uid: null };
-    const allowed = simulator.checkAccess('githubPagesAuditorV1/development/users/userA/githubTokens/default', auth);
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/users/userA/githubTokens/default', auth);
     assert.strictEqual(allowed, false, 'Unauthenticated access must be denied');
   });
 
@@ -163,8 +163,8 @@ describe('Firestore Rules Simulation Diagnostics', () => {
 
   it('denies unrecognized subpaths or other unexpected namespaces', () => {
     const auth = { uid: 'userA' };
-    assert.strictEqual(simulator.checkAccess('githubPagesAuditorV1/development/unexpected/path', auth), false);
-    assert.strictEqual(simulator.checkAccess('githubPagesAuditorV1/staging/users/userA/githubTokens/default', auth), true); // we normalized env to any match so staging is fine but rules restrict to correct subpaths structure
-    assert.strictEqual(simulator.checkAccess('githubPagesAuditorV1/development/users/userA/githubTokens/not_default', auth), false);
+    assert.strictEqual(simulator.checkAccess('githubPagesAuditorV2/development/unexpected/path', auth), false);
+    assert.strictEqual(simulator.checkAccess('githubPagesAuditorV2/staging/users/userA/githubTokens/default', auth), true); // we normalized env to any match so staging is fine but rules restrict to correct subpaths structure
+    assert.strictEqual(simulator.checkAccess('githubPagesAuditorV2/development/users/userA/githubTokens/not_default', auth), false);
   });
 });

@@ -36,7 +36,7 @@ The **Launcher** page displays a user's detected GitHub Pages sites from their m
 - Only Pages-enabled sites with safe \`http:\` or \`https:\` URLs are included.
 - Tile ordering can be customized and is persisted in Firestore under \`settings/launcherLayout\`.
 - The app stores only layout metadata (IDs and order), not duplicated audit payloads.
-- Icons are generated locally based on the app's initial; no external favicon service is used.
+- No third-party favicon proxy services are used; the application relies on direct best-effort metadata collection from the audited site and falls back to locally generated displays based on the app's initial.
 - Layout stores the ordered array of IDs rather than absolute x/y coordinates.
 `;
 

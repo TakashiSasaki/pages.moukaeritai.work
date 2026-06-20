@@ -1,5 +1,5 @@
 # External Consumer Guide
-Version: `1.2.0` (External Consumer Trial Readiness Baseline)
+Version: `1.4.0` (Documentation Consistency & Active Domain Baseline)
 
 This document provides instructions for external systems and users consuming data exported by the GitHub Pages Auditor. The application supports exporting audit data in JSON and CSV formats.
 

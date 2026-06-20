@@ -1,5 +1,5 @@
 # GitHub Pages Auditor
-Version: `1.2.0` (External Consumer Trial Readiness Baseline)
+Version: `1.4.0` (Documentation Consistency & Active Domain Baseline)
 
 GitHub Pages Auditor is a multi-user web application that audits GitHub Pages settings across repositories accessible to fine-grained or classic Personal Access Tokens (PATs). It displays custom domain configuration status, HTTPS certificate state, and Pages deployment methods securely without modifying any settings.
 
@@ -76,9 +76,9 @@ For detailed metadata, properties, classification mappings, future nested schema
 
 Security rules are codified in `firestore.rules` of the root folder:
 
-1.  **Google user tokens**: Isolated to `githubPagesAuditorV1/{environment}/users/{uid}/githubTokens/default` via `request.auth.uid == uid`.
-2.  **Google user audits**: Isolated to `githubPagesAuditorV1/{environment}/users/{uid}/audits/{auditId}` via `request.auth.uid == uid`.
-3.  **Anonymous user tokens**: Isolated to `githubPagesAuditorV1/{environment}/anonymousSessions/{uid}/githubTokens/default` via `request.auth.uid == uid`.
+1.  **Google user tokens**: Isolated to `githubPagesAuditorV2/{environment}/users/{uid}/githubTokens/default` via `request.auth.uid == uid`.
+2.  **Google user audits**: Isolated to `githubPagesAuditorV2/{environment}/users/{uid}/audits/{auditId}` via `request.auth.uid == uid`.
+3.  **Anonymous user tokens**: Isolated to `githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default` via `request.auth.uid == uid`.
 4.  **Catch-all block**: All other top-level collection reads/writes (e.g. general `/users`, `/tokens`, `/audits`) are denied.
 
 ### Deployment of Rules
@@ -130,5 +130,5 @@ The **Launcher** surface displays a user's detected GitHub Pages sites, sharing 
 - Tile ordering can be customized from either surface and is persisted in Firestore under `settings/launcherLayout`. Layout persistence is optimistic: UI updates immediately upon moving a tile; a save failure will produce a non-blocking warning without reverting the display.
 - See `docs/launcher-smoke-checklist.md` for manual testing instructions.
 - The app stores only layout metadata (IDs and order), not duplicated audit payloads.
-- Icons are generated locally based on the app's initial; no external favicon service is used.
+- No third-party favicon proxy services are used; the application relies on direct best-effort metadata collection from the audited site and falls back to locally generated displays based on the app's initial.
 - Layout stores the ordered array of IDs rather than absolute x/y coordinates.
