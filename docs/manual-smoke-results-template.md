@@ -1,10 +1,10 @@
-# Manual Smoke Testing Results Template (Milestone 1.5.4)
+# Manual Smoke Testing Results Template (Milestone 1.6.0)
 
 Use this document to log manual smoke testing results prior to marking a production candidate ready for the **https://pages.moukaeritai.work** environment.
 
 - **Target Public URL**: `https://pages.moukaeritai.work`
 - **Fallback Infrastructure URL**: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
-- **App Version**: `1.5.4`
+- **App Version**: `1.6.0`
 
 ---
 
@@ -20,7 +20,7 @@ Use this document to log manual smoke testing results prior to marking a product
 ## Verification Checklist
 
 ### 1. Host Health and Liveness
-- [ ] **Homepage Load:** Navigate directly to `https://pages.moukaeritai.work`. Verify the landing page loads successfully, displaying appropriate styling, typography, and version badge reading `1.5.4`.
+- [ ] **Homepage Load:** Navigate directly to `https://pages.moukaeritai.work`. Verify the landing page loads successfully, displaying appropriate styling, typography, and version badge reading `1.6.0`.
 - [ ] **Liveness Probe Endpoint:** Query the unauthenticated health endpoint `https://pages.moukaeritai.work/healthz`. Confirm it returns JSON `{ "ok": true }` with status 200 without exposing secrets.
 
 ### 2. Authentication Flow

@@ -102,6 +102,8 @@ export default function Dashboard() {
   });
   const [results, setResults] = useState<RepositoryResult[] | null>(null);
   const [auditCreatedAt, setAuditCreatedAt] = useState<string | null>(null);
+  const [scanMode, setScanMode] = useState<'user' | 'org'>('user');
+  const [organizationName, setOrganizationName] = useState<string>('');
   const [now, setNow] = useState(() => Date.now());
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -415,6 +417,13 @@ export default function Dashboard() {
       return;
     }
 
+    if (scanMode === 'org') {
+      if (!organizationName || !/^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/.test(organizationName)) {
+        setError('Please enter a valid GitHub organization name.');
+        return;
+      }
+    }
+
     setError(null);
     setIsAuditing(true);
     setResults(null);
@@ -440,7 +449,8 @@ export default function Dashboard() {
 
       const res = await fetch('/api/audit/run', {
         method: 'POST',
-        headers
+        headers,
+        body: JSON.stringify({ scanMode, organizationName })
       });
       
       if (!res.ok) {
@@ -894,51 +904,85 @@ export default function Dashboard() {
 
       {/* Control Section */}
       {!auditId && (
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center">
-            {hasStoredPat ? (
-              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200" title="Due to sandbox limits, tokens are stored in memory and reset between sessions.">
-                <CheckCircle className="w-4 h-4 mr-1.5" />
-                Secure Token Loaded (Session Only)
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                <Key className="w-4 h-4 mr-1.5" />
-                GitHub Personal Access Token Not Configured (Set in Profile Menu)
-              </span>
-            )}
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center">
+              {hasStoredPat ? (
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200" title="Due to sandbox limits, tokens are stored in memory and reset between sessions.">
+                  <CheckCircle className="w-4 h-4 mr-1.5" />
+                  Secure Token Loaded (Session Only)
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                  <Key className="w-4 h-4 mr-1.5" />
+                  GitHub Personal Access Token Not Configured (Set in Profile Menu)
+                </span>
+              )}
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              {cachedAudit && !isAuditing && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/results/${cachedAudit.auditId}`)}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg flex items-center justify-center font-medium border border-slate-200 shadow-xs transition-all text-sm cursor-pointer"
+                >
+                  <Clock className="w-4 h-4 mr-1.5" />
+                  <span>キャッシュを表示 ({new Date(cachedAudit.createdAt).toLocaleString([], {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'})})</span>
+                </button>
+              )}
+
+              <button 
+                onClick={runAudit}
+                disabled={isAuditing || !hasStoredPat}
+                className="w-full sm:w-auto px-8 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center font-medium shadow-sm transition-all text-sm cursor-pointer"
+              >
+                {isAuditing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Auditing...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-2 fill-current" />
+                    Launch Audit
+                  </>
+                )}
+              </button>
+            </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            {cachedAudit && !isAuditing && (
-              <button
-                type="button"
-                onClick={() => navigate(`/results/${cachedAudit.auditId}`)}
-                className="w-full sm:w-auto px-5 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg flex items-center justify-center font-medium border border-slate-200 shadow-xs transition-all text-sm cursor-pointer"
-              >
-                <Clock className="w-4 h-4 mr-1.5" />
-                <span>キャッシュを表示 ({new Date(cachedAudit.createdAt).toLocaleString([], {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'})})</span>
-              </button>
-            )}
-
-            <button 
-              onClick={runAudit}
-              disabled={isAuditing || !hasStoredPat}
-              className="w-full sm:w-auto px-8 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center font-medium shadow-sm transition-all text-sm cursor-pointer"
-            >
-              {isAuditing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Auditing...
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 mr-2 fill-current" />
-                  Launch Audit
-                </>
+          {hasStoredPat && !isAuditing && (
+            <div className="pt-4 border-t border-slate-100 grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Scan Mode</label>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" value="user" checked={scanMode === 'user'} onChange={(e) => setScanMode(e.target.value as 'user' | 'org')} className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500" />
+                    <span className="text-sm text-slate-600">My accessible repositories</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" value="org" checked={scanMode === 'org'} onChange={(e) => setScanMode(e.target.value as 'user' | 'org')} className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500" />
+                    <span className="text-sm text-slate-600">Specific organization</span>
+                  </label>
+                </div>
+              </div>
+              
+              {scanMode === 'org' && (
+                <div className="animate-fade-in">
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">Organization Name</label>
+                  <input
+                    type="text"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    placeholder="e.g. google"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <p className="text-xs text-slate-500 mt-1.5">Repositories must be visible to the provided token.</p>
+                </div>
               )}
-            </button>
-          </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -44,7 +44,7 @@ Allowed optional endpoints:
 
 GET /repos/{owner}/{repo}/pages/health
 GET /rate_limit
-GET /orgs/{org}/repos (allowed by specification; currently NOT implemented in V2 backend allowlist)
+GET /orgs/{org}/repos
 
 "GET /orgs/{org}/repos" may be used only if organization-specific scan mode is implemented.
 

@@ -26,6 +26,7 @@ describe('GitHub API Allowlist and Subpaths', () => {
       '/user/repos',
       '/repos/test-owner/test-repo/pages',
       '/repos/test-owner/test-repo/pages/health',
+      '/orgs/my-org/repos',
       '/rate_limit'
     ];
     for (const ep of valid) {
@@ -44,7 +45,6 @@ describe('GitHub API Allowlist and Subpaths', () => {
       '/repos/test-owner/test-repo/actions/runs',
       '/repos/test-owner/test-repo/pages/builds',
       '/repos/test-owner/test-repo',
-      '/orgs/my-org/repos',
       '/repos/test-owner/test-repo/contents/CNAME',
       '/repos/test-owner/test-repo/key',
       '/orgs/test/outside'
@@ -281,7 +281,7 @@ describe('GitHub API Security & Proxy Shield', () => {
       '/repos/test-owner/test-repo/pages/builds',
       '/repos/test-owner/test-repo/contents/CNAME',
       '/repos/owner/repo/pulls',
-      '/orgs/my-org/repos'
+      '/orgs/test/outside'
     ];
 
     for (const ep of invalid) {

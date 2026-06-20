@@ -214,7 +214,7 @@ try {
 try {
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   const version = packageJson.version;
-  const EXPECTED_VERSION = '1.5.4';
+  const EXPECTED_VERSION = '1.6.0';
   
   // Validate SemVer format
   const semverRegex = /^\d+\.\d+\.\d+$/;
@@ -368,6 +368,25 @@ try {
   }
 } catch (e) {
   printFail(`Failed to audit stale phrases: ${e.message}`);
+}
+
+// 13. Org Scan Feature Compliance
+try {
+  const clientTs = fs.readFileSync('server/githubClient.ts', 'utf8');
+  if (clientTs.includes('/orgs\\/[^\\/]+\\/repos')) {
+    printSuccess(`Backend allowlist explicitly supports organization-specific repo enumeration.`);
+  } else {
+    printFail(`Backend allowlist is missing the /orgs/{org}/repos endpoint regex.`);
+  }
+
+  const agentsMd = fs.readFileSync('AGENTS.md', 'utf8');
+  if (agentsMd.includes('- `GET /orgs/{org}/repos`') && !agentsMd.includes('NOT implemented in V2 backend allowlist')) {
+    printSuccess(`AGENTS.md correctly asserts organization enumeration is implemented.`);
+  } else {
+    printFail(`AGENTS.md does not correctly describe the /orgs/{org}/repos status.`);
+  }
+} catch (e) {
+  printFail(`Could not verify org scan feature compliance: ${e.message}`);
 }
 
 console.log('\n=== RESULT ===');

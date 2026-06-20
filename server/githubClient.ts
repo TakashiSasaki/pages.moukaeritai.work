@@ -4,6 +4,7 @@ export const ALLOWED_ENDPOINTS = [
   /^\/user\/repos$/,
   /^\/repos\/[^\/]+\/[^\/]+\/pages$/,
   /^\/repos\/[^\/]+\/[^\/]+\/pages\/health$/,
+  /^\/orgs\/[^\/]+\/repos$/,
   /^\/rate_limit$/
 ];
 

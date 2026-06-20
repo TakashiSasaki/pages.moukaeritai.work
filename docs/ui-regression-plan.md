@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - UI Regression Test Plan
-Version: `1.5.4` (Release Gate Generalization & Stale PR Closure Baseline)
+Version: `1.6.0` (Organization-Specific Scan Mode Baseline)
 
 This document contains the requirements and test matrix for the **frontend user interface regression testing**. Since deploying heavier testing frameworks (such as Playwright, Cypress, or Puppeteer) inside sandboxed containerized workspaces introduces runtime execution risks, this plan outlines the exact manual validation and future E2E automation matrix.
 

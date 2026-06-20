@@ -104,6 +104,15 @@ app.post('/api/audit/run', verifyAuth, async (req, res) => {
   const pat = req.headers['x-temp-pat'];
   if (!pat || typeof pat !== 'string') return res.status(400).json({ error: 'No GitHub PAT provided' });
 
+  const scanMode = req.body.scanMode || 'user';
+  const orgName = req.body.organizationName || '';
+
+  if (scanMode === 'org') {
+    if (!orgName || typeof orgName !== 'string' || !/^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/.test(orgName)) {
+      return res.status(400).json({ error: 'Invalid organization name' });
+    }
+  }
+
   // Set headers for NDJSON streaming immediately to enable chunked transfer
   res.setHeader('Content-Type', 'application/x-ndjson');
   res.setHeader('Cache-Control', 'no-cache');
@@ -117,10 +126,20 @@ app.post('/api/audit/run', verifyAuth, async (req, res) => {
     let page = 1;
     let hasNextPage = true;
 
+    const repoFetchEndpoint = scanMode === 'org' ? `/orgs/${orgName}/repos` : '/user/repos';
+    // For user repos, affiliation helps. For orgs, it might not be supported but doesn't hurt, or we can use default (all).
+    // Actually orgs/repos does not take visibility/affiliation the same way user/repos does. Let's adjust params.
+    const queryParams: any = { page, per_page: 100 };
+    if (scanMode === 'user') {
+      queryParams.visibility = 'all';
+      queryParams.affiliation = 'owner,collaborator,organization_member';
+    }
+
     while (hasNextPage) {
       res.write(JSON.stringify({ type: 'progress', current: 0, total: 0, repo: `Retrieving repository metadata (page ${page})...` }) + '\n');
       
-      const reposResponse = await githubApi('/user/repos', pat as string, { page, per_page: 100, visibility: 'all', affiliation: 'owner,collaborator,organization_member' });
+      queryParams.page = page;
+      const reposResponse = await githubApi(repoFetchEndpoint, pat as string, queryParams);
       
       const rateLimitError = checkRateLimit(reposResponse);
       if (rateLimitError) {
@@ -132,7 +151,7 @@ app.post('/api/audit/run', verifyAuth, async (req, res) => {
       if (!reposResponse.ok) {
         res.write(JSON.stringify({ 
           type: 'error',
-          error: classifyError(reposResponse.status, false, true, false), 
+          error: classifyError(reposResponse.status, scanMode === 'user', true, false), 
           details: await reposResponse.text() 
         }) + '\n');
         res.end();

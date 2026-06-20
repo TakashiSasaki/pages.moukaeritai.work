@@ -1,5 +1,5 @@
 # External Consumer Guide
-Version: `1.5.4` (Release Gate Generalization & Stale PR Closure Baseline)
+Version: `1.6.0` (Organization-Specific Scan Mode Baseline)
 
 This document provides instructions for external systems and users consuming data exported by the GitHub Pages Auditor. The application supports exporting audit data in JSON and CSV formats.
 
