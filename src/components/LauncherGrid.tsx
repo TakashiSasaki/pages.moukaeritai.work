@@ -55,12 +55,12 @@ function LauncherSiteIcon({ site }: { site: LauncherSite }) {
           <img
             src={site.faviconUrl!}
             alt="Favicon"
-            className={`${showPwa ? 'w-8 h-8' : 'w-12 h-12'} object-contain rounded-xl select-none shrink-0 border border-slate-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs`}
+            className="w-12 h-12 object-contain rounded-xl select-none shrink-0 border border-slate-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs"
             onError={() => setFavError(true)}
             referrerPolicy="no-referrer"
           />
           {showPwa && (
-            <span className="absolute -bottom-0.5 -right-0.5 bg-indigo-500 text-white text-[7px] font-bold px-0.5 rounded-sm border border-white shadow-2xs select-none">
+            <span className="absolute -bottom-1 -right-1 bg-indigo-500 text-white text-[7px] font-bold px-0.5 rounded-sm border border-white shadow-2xs select-none">
               FAV
             </span>
           )}
