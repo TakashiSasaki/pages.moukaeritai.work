@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Cloud Run Operations Manual
-Version: `1.6.0` (Organization-Specific Scan Mode Baseline)
+Version: `1.6.1` (Organization-Specific Scan Mode Baseline)
 
 This document outlines standard operating procedures, architectural summaries, and verification guides for the production container runtime deployed on Google Cloud Run.
 

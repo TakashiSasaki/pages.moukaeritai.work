@@ -2,6 +2,7 @@ import React from 'react';
 import { LauncherSite } from '../lib/launcherSites';
 import { AlertCircle, ChevronLeft, ChevronRight, RotateCcw, ExternalLink, Database, Loader2, Maximize2, Minimize2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 
 export interface LauncherGridProps {
   sites: LauncherSite[];
@@ -636,13 +637,64 @@ export default function LauncherGrid({
     <div className="flex flex-col min-h-0 bg-slate-50 p-0 sm:p-6 md:p-10 font-sans h-full overflow-hidden relative">
       {/* Dynamic Ambient Background Blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-200/30 rounded-full blur-[120px] animate-[pulse_12s_ease-in-out_infinite]" />
-        <div className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-sky-200/30 rounded-full blur-[100px] animate-[pulse_15s_ease-in-out_infinite_2s]" />
-        <div className="absolute -bottom-[10%] left-[10%] w-[60%] h-[60%] bg-purple-200/20 rounded-full blur-[140px] animate-[pulse_18s_ease-in-out_infinite_4s]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] h-[30%] bg-blue-100/40 rounded-full blur-[80px] animate-[pulse_10s_ease-in-out_infinite_1s]" />
+        <motion.div 
+          animate={{
+            x: [0, 50, -30, 0],
+            y: [0, -40, 60, 0],
+            scale: [1, 1.1, 0.9, 1],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-indigo-300/40 rounded-full blur-[110px]" 
+        />
+        <motion.div 
+          animate={{
+            x: [0, -60, 40, 0],
+            y: [0, 80, -30, 0],
+            scale: [1, 0.9, 1.2, 1],
+          }}
+          transition={{
+            duration: 30,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2
+          }}
+          className="absolute top-[20%] -right-[5%] w-[50%] h-[50%] bg-sky-300/45 rounded-full blur-[100px]" 
+        />
+        <motion.div 
+          animate={{
+            x: [0, 70, -80, 0],
+            y: [0, -50, 40, 0],
+            scale: [1, 1.2, 0.8, 1],
+          }}
+          transition={{
+            duration: 35,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 4
+          }}
+          className="absolute -bottom-[10%] left-[10%] w-[70%] h-[70%] bg-purple-300/35 rounded-full blur-[130px]" 
+        />
+        <motion.div 
+          animate={{
+            x: [-40, 40, -50, -40],
+            y: [30, -60, 50, 30],
+            scale: [0.8, 1.1, 0.9, 0.8],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] bg-blue-200/50 rounded-full blur-[90px]" 
+        />
       </div>
 
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.12] pointer-events-none mix-blend-multiply animate-[pulse_10s_ease-in-out_infinite]"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.15] pointer-events-none mix-blend-multiply animate-[pulse_10s_ease-in-out_infinite]"></div>
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col relative z-10 min-h-0">
         
         {/* Instruction and Reset removed */}

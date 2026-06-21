@@ -1,12 +1,12 @@
 # Anonymous Session Lifecycle Management Wording & Operator Runbook
-Version: `1.6.0` (Organization-Specific Scan Mode Baseline)
+Version: `1.6.1` (Organization-Specific Scan Mode Baseline)
 
 ## 1. Overview
 The GitHub Pages Auditor provides an unauthenticated guest mode allowing users to perform non-persistent baseline audits using temporary Anonymous Sessions created directly via Firebase Authentication. 
 
 Since these anonymous guest accounts accumulate temporary token settings and navigation preferences, managing their lifecycle prevents garbage documents from polluting the Firestore database.
 
-In **Milestone 1.6.0**, the data structures been fully upgraded to be **TTL-Ready**. All guest-created documents carry clean, standardized lifecycle fields.
+In **Milestone 1.6.1**, the data structures been fully upgraded to be **TTL-Ready**. All guest-created documents carry clean, standardized lifecycle fields.
 
 ---
 
