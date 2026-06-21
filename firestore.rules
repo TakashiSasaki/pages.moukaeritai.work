@@ -15,12 +15,20 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
+    match /githubPagesAuditorV2/{environment}/users/{uid}/launcherIconCache/{cacheId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
     // Anonymous/Guest Session Users 
     match /githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
     match /githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/settings/{settingId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/launcherIconCache/{cacheId} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 

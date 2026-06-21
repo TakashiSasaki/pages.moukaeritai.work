@@ -3,6 +3,9 @@ import { LauncherSite } from '../lib/launcherSites';
 import { AlertCircle, ChevronLeft, ChevronRight, RotateCcw, ExternalLink, Database, Loader2, Maximize2, Minimize2, Settings2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { useAuth } from '../AuthContext';
+import { getEnvironmentName } from '../lib/firestorePaths';
+import { getCachedIcon, saveCachedIcon, isCacheExpired } from '../lib/launcherIconCache';
 
 export interface LauncherGridProps {
   sites: LauncherSite[];
@@ -24,18 +27,137 @@ export interface LauncherGridProps {
   onSettingsChange?: (settings: { animationSpeed?: number; visibleIconsRange?: number }) => void | Promise<void>;
 }
 
+const inFlightResolutions = new Set<string>();
+const failedResolutions = new Set<string>();
+
 const LauncherSiteIcon = React.memo(function LauncherSiteIcon({ site, sizeClass = "w-12 h-12" }: { site: LauncherSite; sizeClass?: string }) {
+  const { user } = useAuth();
+  const env = getEnvironmentName(import.meta.env.MODE);
+
+  const [cachedDataUrl, setCachedDataUrl] = React.useState<string | null>(null);
   const [pwaError, setPwaError] = React.useState(false);
   const [favError, setFavError] = React.useState(false);
 
-  const showPwa = !!(site.pwaIconUrl && !pwaError);
-  // PWA優先で1つのアイコンのみを表示させる
-  const showFav = !showPwa && !!(site.faviconUrl && !favError);
+  // Expose the candidate icon URL and source type based on standard priority
+  const showPwaWithoutCache = !!(site.pwaIconUrl && !pwaError);
+  const showFavWithoutCache = !showPwaWithoutCache && !!(site.faviconUrl && !favError);
+
+  const candidateUrl = showPwaWithoutCache
+    ? site.pwaIconUrl
+    : (showFavWithoutCache ? site.faviconUrl : null);
+
+  const candidateSourceKind = showPwaWithoutCache
+    ? 'pwa_icon'
+    : (showFavWithoutCache ? 'favicon' : null);
+
+  React.useEffect(() => {
+    let active = true;
+    if (!user || !candidateUrl || !candidateSourceKind) {
+      setCachedDataUrl(null);
+      return;
+    }
+
+    async function checkCacheAndTriggerResolve() {
+      const uid = user!.uid;
+      const isAnonymous = user!.isAnonymous;
+
+      // 1. Check if we already have it in the Firestore cache
+      try {
+        const cachedDoc = await getCachedIcon(uid, isAnonymous, site.id, candidateUrl!, env);
+        if (cachedDoc && cachedDoc.dataBase64) {
+          if (active) {
+            setCachedDataUrl(`data:${cachedDoc.contentType};base64,${cachedDoc.dataBase64}`);
+          }
+
+          // If expired, trigger an async resolve in the background
+          if (isCacheExpired(cachedDoc)) {
+            triggerBackgroundResolve(uid, isAnonymous);
+          }
+          return;
+        }
+      } catch (e) {
+        console.warn('Silent local cache read error:', e);
+      }
+
+      // 2. Cache miss -> perform background resolve
+      triggerBackgroundResolve(uid, isAnonymous);
+    }
+
+    async function triggerBackgroundResolve(uid: string, isAnonymous: boolean) {
+      const resolutionKey = `${site.id}:${candidateUrl}`;
+      if (inFlightResolutions.has(resolutionKey) || failedResolutions.has(resolutionKey)) {
+        return;
+      }
+
+      inFlightResolutions.add(resolutionKey);
+
+      try {
+        const token = await user!.getIdToken();
+        const response = await fetch('/api/icon/resolve', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            siteId: site.id,
+            pageUrl: site.url,
+            iconUrl: candidateUrl,
+            sourceKind: candidateSourceKind
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Endpoint returned status ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (!result.ok) {
+          throw new Error(result.error || 'Server-side resolving failed');
+        }
+
+        // Cache persistent results in Firestore
+        await saveCachedIcon(uid, isAnonymous, env, {
+          schemaVersion: 'github-pages-auditor.launcherIconCache.v1',
+          siteId: site.id,
+          ownerRepo: site.ownerRepo,
+          pageUrl: site.url,
+          sourceIconUrl: candidateUrl!,
+          sourceKind: candidateSourceKind!,
+          contentType: result.contentType,
+          encoding: 'base64',
+          dataBase64: result.dataBase64,
+          byteLength: result.byteLength,
+          sha256: result.sha256,
+          fetchedAt: result.fetchedAt
+        });
+
+        if (active) {
+          setCachedDataUrl(`data:${result.contentType};base64,${result.dataBase64}`);
+        }
+      } catch (err) {
+        failedResolutions.add(resolutionKey);
+        console.warn('Silent background resolver error:', err);
+      } finally {
+        inFlightResolutions.delete(resolutionKey);
+      }
+    }
+
+    checkCacheAndTriggerResolve();
+
+    return () => {
+      active = false;
+    };
+  }, [user, site.id, candidateUrl, candidateSourceKind, env]);
+
+  const showCached = !!cachedDataUrl;
+  const showPwa = !showCached && showPwaWithoutCache;
+  const showFav = !showCached && showFavWithoutCache;
 
   const isLarge = sizeClass.includes('68') || sizeClass.includes('16');
   const textClass = isLarge ? 'text-2xl' : 'text-xl';
 
-  if (!showPwa && !showFav) {
+  if (!showCached && !showPwa && !showFav) {
     return (
       <div className={`${sizeClass} bg-slate-100 group-hover:bg-indigo-50 group-hover:text-indigo-600 rounded-xl flex items-center justify-center text-slate-600 font-bold ${textClass} uppercase tracking-wider select-none shrink-0 border border-slate-200 group-hover:border-indigo-200 transition-colors duration-300 group-hover:rotate-3`}>
         {site.name.charAt(0)}
@@ -45,6 +167,20 @@ const LauncherSiteIcon = React.memo(function LauncherSiteIcon({ site, sizeClass 
 
   return (
     <div className="flex items-end gap-2 shrink-0">
+      {showCached && (
+        <div className="relative group/cached">
+          <img
+            src={cachedDataUrl!}
+            alt="Cached Site Icon"
+            className={`${sizeClass} object-contain rounded-xl select-none shrink-0 border border-indigo-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs`}
+            onError={() => setCachedDataUrl(null)}
+            referrerPolicy="no-referrer"
+          />
+          <span className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-[8px] font-extrabold px-1 rounded-sm border border-white shadow-2xs select-none">
+            CACHED
+          </span>
+        </div>
+      )}
       {showPwa && (
         <div className="relative group/pwa">
           <img

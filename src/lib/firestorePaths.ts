@@ -54,3 +54,20 @@ export function getUserSettingDocPath(environment: string, uid: string, isAnonym
   return `${getUserSettingsCollectionPath(environment, uid, isAnonymous)}/${settingId}`;
 }
 
+/**
+ * Returns the collection path for Launcher icon cache.
+ */
+export function getLauncherIconCacheCollectionPath(environment: string, uid: string, isAnonymous: boolean): string {
+  const env = environment === 'production' ? 'production' : 'development';
+  return isAnonymous
+    ? `githubPagesAuditorV2/${env}/anonymousSessions/${uid}/launcherIconCache`
+    : `githubPagesAuditorV2/${env}/users/${uid}/launcherIconCache`;
+}
+
+/**
+ * Returns the document path for a specific cached icon.
+ */
+export function getLauncherIconCacheDocPath(environment: string, uid: string, isAnonymous: boolean, cacheId: string): string {
+  return `${getLauncherIconCacheCollectionPath(environment, uid, isAnonymous)}/${cacheId}`;
+}
+

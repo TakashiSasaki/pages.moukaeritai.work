@@ -55,6 +55,13 @@ class RulesSimulator {
       condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
     });
 
+    // 2c. match /githubPagesAuditorV2/{environment}/users/{uid}/launcherIconCache/{cacheId}
+    this.rules.push({
+      pattern: /^githubPagesAuditorV2\/([^\/]+)\/users\/([^\/]+)\/launcherIconCache\/([^\/]+)$/,
+      paramMap: { environment: 1, uid: 2, cacheId: 3 },
+      condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
+    });
+
     // 3. match /githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/githubTokens/default
     this.rules.push({
       pattern: /^githubPagesAuditorV2\/([^\/]+)\/anonymousSessions\/([^\/]+)\/githubTokens\/default$/,
@@ -66,6 +73,13 @@ class RulesSimulator {
     this.rules.push({
       pattern: /^githubPagesAuditorV2\/([^\/]+)\/anonymousSessions\/([^\/]+)\/settings\/([^\/]+)$/,
       paramMap: { environment: 1, uid: 2, settingId: 3 },
+      condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
+    });
+
+    // 3c. match /githubPagesAuditorV2/{environment}/anonymousSessions/{uid}/launcherIconCache/{cacheId}
+    this.rules.push({
+      pattern: /^githubPagesAuditorV2\/([^\/]+)\/anonymousSessions\/([^\/]+)\/launcherIconCache\/([^\/]+)$/,
+      paramMap: { environment: 1, uid: 2, cacheId: 3 },
       condition: (auth, params) => auth.uid !== null && auth.uid === params.uid
     });
 
@@ -184,5 +198,45 @@ describe('Firestore Rules Simulation Diagnostics', () => {
     assert.strictEqual(simulator.checkAccess('githubPagesAuditorV2/development/unexpected/path', auth), false);
     assert.strictEqual(simulator.checkAccess('githubPagesAuditorV2/staging/users/userA/githubTokens/default', auth), true); // we normalized env to any match so staging is fine but rules restrict to correct subpaths structure
     assert.strictEqual(simulator.checkAccess('githubPagesAuditorV2/development/users/userA/githubTokens/not_default', auth), false);
+  });
+
+  // Scope 4: Launcher Icon Cache Rule Simulator Assertions
+  it('allows Google user to access their own icon cache', () => {
+    const auth = { uid: 'googleUser123' };
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/users/googleUser123/launcherIconCache/iconSHA256', auth);
+    assert.strictEqual(allowed, true);
+  });
+
+  it('prohibits Google user from accessing another user\'s icon cache', () => {
+    const auth = { uid: 'googleUser123' };
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/users/hackerUser999/launcherIconCache/iconSHA256', auth);
+    assert.strictEqual(allowed, false);
+  });
+
+  it('allows anonymous guests to access their own session icon cache', () => {
+    const auth = { uid: 'anonSessionABC' };
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/anonymousSessions/anonSessionABC/launcherIconCache/iconSHA256', auth);
+    assert.strictEqual(allowed, true);
+  });
+
+  it('prohibits anonymous guests from accessing another session\'s icon cache', () => {
+    const auth = { uid: 'anonSessionABC' };
+    const allowed = simulator.checkAccess('githubPagesAuditorV2/development/anonymousSessions/anotherSessionXYZ/launcherIconCache/iconSHA256', auth);
+    assert.strictEqual(allowed, false);
+  });
+
+  it('denies unauthenticated access to the launcher icon cache', () => {
+    const auth = { uid: null };
+    const allowedUser = simulator.checkAccess('githubPagesAuditorV2/development/users/googleUser123/launcherIconCache/iconSHA256', auth);
+    const allowedAnon = simulator.checkAccess('githubPagesAuditorV2/development/anonymousSessions/anonSessionABC/launcherIconCache/iconSHA256', auth);
+    assert.strictEqual(allowedUser, false);
+    assert.strictEqual(allowedAnon, false);
+  });
+
+  it('denies unexpected top-level or malformed cache paths', () => {
+    const auth = { uid: 'googleUser123' };
+    assert.strictEqual(simulator.checkAccess('githubPagesAuditorV2/development/users/googleUser123/launcherIconCache', auth), false); // missing document ID
+    assert.strictEqual(simulator.checkAccess('githubPagesAuditorV2/development/users/googleUser123/launcherIconCache/child/extra', auth), false); // unexpected nested components
+    assert.strictEqual(simulator.checkAccess('launcherIconCache/iconSHA256', auth), false); // completely malformed path
   });
 });

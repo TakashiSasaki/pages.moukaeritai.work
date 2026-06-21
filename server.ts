@@ -28,6 +28,7 @@ import {
 
 import { validateGitHubOrgName } from './src/lib/validation';
 import { fetchSiteMetadata } from './server/siteMetadata';
+import { resolveExternalIcon } from './server/iconResolver';
 
 // Initialize Firebase Admin using validated settings
 try {
@@ -302,6 +303,21 @@ app.post('/api/audit/run', verifyAuth, async (req, res) => {
       res.write(JSON.stringify({ type: 'error', error: error.message }) + '\n');
       res.end();
     }
+  }
+});
+
+// 2.5 Icon Cache Resolver Endpoint
+app.post('/api/icon/resolve', verifyAuth, async (req, res) => {
+  const { siteId, pageUrl, iconUrl, sourceKind } = req.body;
+  if (!siteId || !pageUrl || !iconUrl || !sourceKind) {
+    return res.status(400).json({ error: 'Missing required parameters: siteId, pageUrl, iconUrl, or sourceKind' });
+  }
+
+  try {
+    const result = await resolveExternalIcon(siteId, pageUrl, iconUrl, sourceKind);
+    return res.json(result);
+  } catch (err: any) {
+    return res.json({ ok: false, error: err.message || String(err) });
   }
 });
 
