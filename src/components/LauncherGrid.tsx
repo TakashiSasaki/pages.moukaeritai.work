@@ -76,6 +76,22 @@ function LauncherSiteIcon({ site, sizeClass = "w-12 h-12" }: { site: LauncherSit
 
 function CircularDomainBadge({ site }: { site: LauncherSite }) {
   const [isHovered, setIsHovered] = React.useState(false);
+  const [isVisible, setIsVisible] = React.useState(true);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const pathId = `circle-path-${site.id}`;
   
   const isProjectDefaultMode = !site.customDomain;
@@ -123,6 +139,7 @@ function CircularDomainBadge({ site }: { site: LauncherSite }) {
 
   return (
     <div 
+      ref={containerRef}
       className="relative w-28 h-28 shrink-0 flex items-center justify-center group/circle"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -139,7 +156,13 @@ function CircularDomainBadge({ site }: { site: LauncherSite }) {
         viewBox="0 0 112 112"
         className="w-full h-full text-slate-800 group-hover/circle:text-indigo-700 fill-current pointer-events-none transition-colors duration-300"
         style={{ 
-          animation: `spin ${isHovered ? '8s' : '18s'} linear infinite`,
+          animationName: 'spin',
+          animationDuration: isHovered ? '8s' : '18s',
+          animationTimingFunction: 'linear',
+          animationIterationCount: 'infinite',
+          animationPlayState: isVisible ? 'running' : 'paused',
+          willChange: 'transform',
+          transformOrigin: 'center',
         }}
       >
         <defs>
@@ -294,6 +317,7 @@ function LauncherCardItem({
 
   return (
     <div 
+      id={`launcher-node-${site.id}`}
       ref={containerRef}
       className="absolute flex flex-col items-center justify-center p-4 touch-none select-none"
       onContextMenu={handleContextMenu}
@@ -598,7 +622,14 @@ export default function LauncherGrid({
       });
 
       nodesRef.current = currentNodes;
-      setPhysicsNodes([...currentNodes]);
+      
+      // OPTIMIZATION: Update direct DOM styles to bypass React render cycle for 60fps performance
+      currentNodes.forEach(node => {
+        const el = document.getElementById(`launcher-node-${node.id}`);
+        if (el) {
+          el.style.transform = `translate3d(${node.x - 56}px, ${node.y - 56}px, 0)`;
+        }
+      });
 
       animationFrameId = requestAnimationFrame(tick);
     };
@@ -611,6 +642,7 @@ export default function LauncherGrid({
     if (readOnly) return;
     activeDragIdRef.current = id;
     setActiveDragId(id);
+    setPhysicsNodes([...nodesRef.current]);
   };
 
   const handleDragEnd = () => {
@@ -643,6 +675,7 @@ export default function LauncherGrid({
 
     activeDragIdRef.current = null;
     setActiveDragId(null);
+    setPhysicsNodes([...nodesRef.current]);
   };
 
   const handleArenaPointerMove = (e: React.PointerEvent) => {
@@ -669,7 +702,12 @@ export default function LauncherGrid({
       }
       return node;
     });
-    setPhysicsNodes([...nodesRef.current]);
+    
+    // OPTIMIZATION: Update dragged exact pos immediately via style bypassing state re-render
+    const el = document.getElementById(`launcher-node-${dragId}`);
+    if (el) {
+      el.style.transform = `translate3d(${cx - 56}px, ${cy - 56}px, 0)`;
+    }
   };
 
   if (loading) {

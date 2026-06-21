@@ -610,6 +610,6 @@ During an audit session, when a repository has GitHub Pages enabled and provides
 
 ### C. Security and Privacy Boundaries
 - **No PAT leakage**: No personal access tokens or custom credentials are sent to the target GitHub Pages sites during these best-effort fetches.
-- **Strictly Read-Only**: fetches utilize standard GET operations with a custom `User-Agent` (aligned with the package version, e.g., `GitHubPagesAuditor/1.6.18`) and have short timeouts (3.5s for HTML, 2.0s for Manifest).
+- **Strictly Read-Only**: fetches utilize standard GET operations with a custom `User-Agent` (aligned with the package version, e.g., `GitHubPagesAuditor/1.6.19`) and have short timeouts (3.5s for HTML, 2.0s for Manifest).
 - **Export Schema Isolation**: These fields are runtime/audit result presentation elements in the UI and are **not** present in the V2 JSON export schema or flat CSV export files.
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const OLD_VER = '1.6.17';
+const OLD_VER = '1.6.19';
 const NEW_VER = '1.6.19';
 
 function replaceInFile(filePath) {
@@ -15,9 +15,9 @@ function replaceInFile(filePath) {
 }
 
 function processDirectory(dirPath) {
+  if (dirPath.includes('node_modules') || dirPath.includes('.git') || dirPath.includes('dist')) return;
   const files = fs.readdirSync(dirPath);
   for (const file of files) {
-    if (file === 'node_modules' || file === '.git' || file === 'dist') continue;
     const fullPath = path.join(dirPath, file);
     const stat = fs.statSync(fullPath);
     if (stat.isDirectory()) {
