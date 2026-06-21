@@ -214,7 +214,7 @@ try {
 try {
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   const version = packageJson.version;
-  const EXPECTED_VERSION = '1.6.16';
+  const EXPECTED_VERSION = '1.6.17';
 
   // Validate SemVer format
   const semverRegex = /^\d+\.\d+\.\d+$/;
@@ -432,6 +432,12 @@ try {
     printFail(`README.md is missing detailed documentation for settings/launcherLayout fields or exclusion of ephemeral state.`);
   }
 
+  if (readmeMd.includes('Compact Metadata Bubble')) {
+    printSuccess(`README.md correctly documents compact metadata bubble behavior.`);
+  } else {
+    printFail(`README.md is missing documentation for compact metadata bubble.`);
+  }
+
   const agentsMd = fs.readFileSync('AGENTS.md', 'utf8');
   if (agentsMd.includes('Maintenance Policy') && agentsMd.includes('maintenance mode')) {
     printSuccess(`AGENTS.md correctly declares maintenance-mode rules.`);
@@ -456,6 +462,12 @@ try {
     printSuccess(`UI regression plan mentions LauncherGrid zIndex/render-order regression coverage.`);
   } else {
     printFail(`UI regression plan is missing LauncherGrid zIndex/render-order coverage.`);
+  }
+
+  if (uiRegression.includes('Compact Metadata Bubble')) {
+    printSuccess(`UI regression plan includes compact metadata bubble checks.`);
+  } else {
+    printFail(`UI regression plan is missing compact metadata bubble checks.`);
   }
   
   if (uiRegression.includes('LAU-04') && uiRegression.includes('Persistence')) {
@@ -521,6 +533,12 @@ try {
     } else {
       printFail(`${implicitDoc} fails to accurately distinguish layout persistence from ephemeral zIndex.`);
     }
+
+    if (content.includes('コンパクトなランチャー・メタデータ吹き出し')) {
+      printSuccess(`${implicitDoc} records compact metadata bubble UX decision.`);
+    } else {
+      printFail(`${implicitDoc} is missing compact metadata bubble UX decision.`);
+    }
   }
 
   const gridFile = 'src/components/LauncherGrid.tsx';
@@ -530,6 +548,24 @@ try {
       printFail(`${gridFile} contains forbidden external asset dependency (transparenttextures.com).`);
     } else {
       printSuccess(`${gridFile} is clean of unapproved external asset dependencies.`);
+    }
+
+    if (content.includes('pressTimer.current = null') && content.includes('setIsPressed(false)')) {
+      printSuccess(`${gridFile} includes pointer-release cleanup for long-press state.`);
+    } else {
+      printFail(`${gridFile} is missing pointer-release cleanup for long-press state.`);
+    }
+
+    if (!content.includes('min-w-[280px]') && content.includes('w-max max-w-[220px]')) {
+      printSuccess(`${gridFile} formalizes compact metadata bubble dimensions.`);
+    } else {
+      printFail(`${gridFile} still contains legacy large metadata bubble sizing.`);
+    }
+
+    if (!content.includes('PWA非対応')) {
+      printSuccess(`${gridFile} correctly omits negative PWA status from compact bubble.`);
+    } else {
+      printFail(`${gridFile} still includes negative PWA status in compact bubble.`);
     }
   }
 } catch (e) {
