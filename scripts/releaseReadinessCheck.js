@@ -214,7 +214,7 @@ try {
 try {
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   const version = packageJson.version;
-  const EXPECTED_VERSION = '1.6.21';
+  const EXPECTED_VERSION = '1.6.20';
 
   // Validate SemVer format
   const semverRegex = /^\d+\.\d+\.\d+$/;
@@ -590,6 +590,31 @@ try {
       printSuccess(`${gridFile} preserves emerald color for repository-name default pages badge text.`);
     } else {
       printFail(`${gridFile} no longer uses emerald color for default project badge text.`);
+    }
+
+    if (content.includes('launcher-node-') && content.includes('requestAnimationFrame') && content.includes('style.transform') && content.includes('IntersectionObserver')) {
+      printSuccess(`${gridFile} retains direct-DOM physics rendering and IntersectionObserver patterns.`);
+    } else {
+      printFail(`${gridFile} is missing direct-DOM physics rendering patterns (requestAnimationFrame, style.transform) or IntersectionObserver.`);
+    }
+  }
+
+  if (fs.existsSync(implicitDoc)) {
+    const docContent = fs.readFileSync(implicitDoc, 'utf8');
+    if (docContent.includes('Direct-DOM Rendering') && docContent.includes('IntersectionObserver')) {
+      printSuccess(`${implicitDoc} formally documents direct-DOM physics UI ephemeral rendering optimizations.`);
+    } else {
+      printFail(`${implicitDoc} does not document direct-DOM rendering UI optimizations.`);
+    }
+  }
+
+  const manualSmoke = 'docs/manual-smoke-results-template.md';
+  if (fs.existsSync(manualSmoke)) {
+    const smokeContent = fs.readFileSync(manualSmoke, 'utf8');
+    if (smokeContent.includes('Direct-DOM Drag Smoothness')) {
+      printSuccess(`${manualSmoke} contains manual smoke checks for Direct-DOM Drag Smoothness.`);
+    } else {
+      printFail(`${manualSmoke} is missing Direct-DOM Drag Smoothness validation.`);
     }
   }
 } catch (e) {

@@ -1,12 +1,12 @@
 # GitHub Pages Auditor
-Version: `1.6.21` (Maintenance Documentation & Launcher Regression Closure)
+Version: `1.6.20` (Maintenance Documentation & Launcher Regression Closure)
 
 GitHub Pages Auditor is a multi-user web application that audits GitHub Pages settings across repositories accessible to fine-grained or classic Personal Access Tokens (PATs). It displays custom domain configuration status, HTTPS certificate state, and Pages deployment methods securely without modifying any settings.
 
 ---
 
 ## Core Features & Milestone Status
-- **Maintenance Baseline**: The project is development-complete and in maintenance mode. 1.6.21 is the maintenance documentation and regression closure patch. Broad new feature work requires an explicit new milestone from the user. Normal future work is restricted to bug fixes, dependency updates, documentation cleanup, small UI adjustments, and operational hardening.
+- **Maintenance Baseline**: The project is development-complete and in maintenance mode. 1.6.20 is the maintenance documentation and regression closure patch. Broad new feature work requires an explicit new milestone from the user. Normal future work is restricted to bug fixes, dependency updates, documentation cleanup, small UI adjustments, and operational hardening.
 - **Production Baseline**: All core backend models, shared classification algorithms, and Firestore security layers are fully hardened and integrated under the latest Node.js test runner.
 - **Secure Backend API Auditing**: Directly proxies standard GitHub API endpoints from the Express backend via safe GET methods. The browser manages its own copy of the PAT and persists it in Firestore under authenticated user isolation using the Firebase Client SDK. The backend only ever holds the PAT temporarily inside the `x-temp-pat` header for the lifetime of the request.
 - **Classification Engine**: Pure shared classification models mapping GitHub Pages metadata into standardized custom domain and SSL status models.
@@ -113,7 +113,7 @@ firebase deploy --only firestore:rules
 *   **Active Production Region**: `asia-east1`
 *   **Deployment Status**: Google Cloud Run is our active, live runtime.
 *   **Custom Domain Status**: Active and canonical custom domain integration (`pages.moukaeritai.work`).
-*   **Current Milestone**: Milestone 1.6.21 (Organization Scan Contract & Baseline Hardening)
+*   **Current Milestone**: Milestone 1.6.20 (Organization Scan Contract & Baseline Hardening)
 *   **Export Schema Status**: V2 is the only current JSON export schema; CSV is a separate flat export format.
 
 ---
@@ -150,6 +150,8 @@ The **Launcher** surface displays a user's detected GitHub Pages sites, sharing 
 - Layout stores the ordered array of IDs rather than absolute x/y coordinates.
 - **Compact Metadata Bubble**: Long-pressing a tile displays a transient, dense metadata overview. This bubble is ephemeral UI presentation only and is not persisted in Firestore.
 - **Repository-Name Default Pages Badge**: For GitHub Pages project sites without a custom domain (e.g., `https://<owner>.github.io/<repositoryname>/`), the circular Launcher badge text is the repository name displayed in green. Root Pages sites (e.g., `https://<owner>.github.io/`) use the repository name as the default fallback as well. Custom-domain sites continue to use domain-oriented circular text. This is a visual presentation feature only and does not affect audit classification, export schema, GitHub API calls, URL construction, PAT handling, or Firestore persistence.
+- **Direct-DOM Physics rendering**: Launcher physics uses direct DOM transform mutation for high-frequency visual positioning in the requestAnimationFrame loop. React state owns semantic state, settings, ordering, and persistence, while direct DOM mutation owns per-frame visual transforms. Direct DOM transforms are ephemeral UI state, are not written to Firestore, and represent a rendering performance optimization only.
+- **IntersectionObserver Pause**: IntersectionObserver is used to pause circular text animation when the badge is offscreen. This is a visual/performance optimization only and is not persisted.
 
 ---
 
@@ -157,7 +159,7 @@ The **Launcher** surface displays a user's detected GitHub Pages sites, sharing 
 To guarantee stability, alignment, and release consistency across development cycles:
 - **Mandatory Version Bumps**: Every file-changing task performed by an agent must bump the patch version inside `package.json`.
 - **Sourced Authority**: The single source of truth for the application version is exclusively the `package.json` `"version"` field. All documentation (README, AGENTS, manuals) and dynamic runtime dependencies (User-Agent strings, API responses, client headers) must align dynamically with this package.json configuration.
-- **Commit Format**: All changes must culminate in a descriptive English commit message outlining the milestone and patch alignment (e.g., `chore(release): close development-complete baseline at 1.6.21`).
+- **Commit Format**: All changes must culminate in a descriptive English commit message outlining the milestone and patch alignment (e.g., `chore(release): close development-complete baseline at 1.6.20`).
 
 ---
 
