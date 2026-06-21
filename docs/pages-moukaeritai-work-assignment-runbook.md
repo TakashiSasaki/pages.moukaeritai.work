@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Custom Domain Assignment Runbook Summary (pages.moukaeritai.work)
-Version: `1.6.2` (Organization Scan Contract & V1 Erasure Baseline)
+Version: `1.6.2` (Organization Scan Contract & Baseline Hardening)
 
 This runbook outlines the operational steps that have been successfully executed to assign the production custom domain `pages.moukaeritai.work` to the existing Cloud Run service.
 

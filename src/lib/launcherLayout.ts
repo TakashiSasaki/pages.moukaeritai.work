@@ -33,7 +33,7 @@ export async function saveLauncherLayout(uid: string, isAnonymous: boolean, orde
   const path = getUserSettingDocPath(env, uid, isAnonymous, 'launcherLayout');
   const now = new Date();
   const payload: LauncherLayoutDoc = {
-    schemaVersion: 'github-pages-auditor.launcherLayout.v1',
+    schemaVersion: 'github-pages-auditor.launcherLayout.v2',
     layoutMode: 'ordered_grid',
     orderedSiteIds,
     hiddenSiteIds: [],

@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Custom Domain Integration and Verification Guide
-Version: `1.6.2` (Organization Scan Contract & V1 Erasure Baseline)
+Version: `1.6.2` (Organization Scan Contract & Baseline Hardening)
 
 This document maps out the operational verification and history for mapping the **GitHub Pages Auditor** Cloud Run service to its production canonical custom domain.
 
@@ -11,7 +11,7 @@ This document maps out the operational verification and history for mapping the 
 *   **Primary Canonical URL**: `https://pages.moukaeritai.work`
 *   **Active Fallback Runtime URL**: `https://github-pages-auditor-1042140630327.asia-east1.run.app` (within `asia-east1` region).
 *   **Custom Domain Target**: `pages.moukaeritai.work` (subdomain of `moukaeritai.work`)
-*   **Current Milestone**: Milestone 1.6.2 (Organization Scan Contract & V1 Erasure Baseline)
+*   **Current Milestone**: Milestone 1.6.2 (Organization Scan Contract & Baseline Hardening)
 
 ---
 

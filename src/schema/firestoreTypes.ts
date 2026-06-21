@@ -62,7 +62,7 @@ export interface TokenMetadataSettingDocument {
 }
 
 export interface LauncherLayoutSettingDocument {
-  schemaVersion: string; // "github-pages-auditor.launcherLayout.v1"
+  schemaVersion: string; // "github-pages-auditor.launcherLayout.v2"
   layoutMode: string; // "ordered_grid"
   orderedSiteIds: string[]; // Ordered list of repo ID or full_name strings
   hiddenSiteIds: string[]; // For filtering hidden tiles

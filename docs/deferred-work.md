@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Deferred Work, Future Roadmap, and Non-Goals
-Version: `1.6.2` (Organization Scan Contract & V1 Erasure Baseline)
+Version: `1.6.2` (Organization Scan Contract & Baseline Hardening)
 
 This document maps out completed items, deferred future work planned for later strides, and permanent architectural non-goals of the GitHub Pages Auditor.
 
@@ -9,7 +9,7 @@ This document maps out completed items, deferred future work planned for later s
 
 ### Implemented in Milestone 1.6.2
 - **Unified Organization Scan Mode**: The `GET /orgs/{org}/repos` endpoint has been finalized and validated via a centralized validation helper, enabling secure organization audit scopes.
-- **V1 Erasure**: All legacy V1 references and schemas have been removed from the operational baseline.
+- **V1 Erasure**: All obsolete predecessor references and schemas have been removed from the operational baseline.
 - **Development-Complete Baseline**: This milestone establishes the final feature-complete state before transitioning to maintenance mode.
 - **Anonymous Session TTL-Ready Lifecycle Foundation**: Implemented a pure, robust lifecycle utility `src/lib/anonymousSessionLifecycle.ts` with complete unit testing. Extended the Firestore `GitHubTokenDocument` and `AnonymousSessionDocument` data models to record `createdAt`, `expiresAt` (default 7-day TTL), and `lastSeenAt`. Integrated active injections during guest token saves.
 - **Lightweight Operational Public Smoke Verification**: Shipped a lightweight public smoke checker (`scripts/publicSmokeCheck.js` and `npm run smoke:public`) to quickly assert the liveness of canonical vs fallback endpoint routes without requiring credentials.

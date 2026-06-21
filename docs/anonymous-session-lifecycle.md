@@ -1,5 +1,5 @@
 # Anonymous Session Lifecycle Management Wording & Operator Runbook
-Version: `1.6.2` (Organization Scan Contract & V1 Erasure Baseline)
+Version: `1.6.2` (Organization Scan Contract & Baseline Hardening)
 
 ## 1. Overview
 The GitHub Pages Auditor provides an unauthenticated guest mode allowing users to perform non-persistent baseline audits using temporary Anonymous Sessions created directly via Firebase Authentication. 

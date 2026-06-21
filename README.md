@@ -1,5 +1,5 @@
 # GitHub Pages Auditor
-Version: `1.6.2` (Organization Scan Contract & V1 Erasure Baseline)
+Version: `1.6.2` (Organization Scan Contract & Baseline Hardening)
 
 GitHub Pages Auditor is a multi-user web application that audits GitHub Pages settings across repositories accessible to fine-grained or classic Personal Access Tokens (PATs). It displays custom domain configuration status, HTTPS certificate state, and Pages deployment methods securely without modifying any settings.
 
@@ -100,7 +100,7 @@ firebase deploy --only firestore:rules
 *   **Active Production Region**: `asia-east1`
 *   **Deployment Status**: Google Cloud Run is our active, live runtime.
 *   **Custom Domain Status**: Active and canonical custom domain integration (`pages.moukaeritai.work`).
-*   **Current Milestone**: Milestone 1.6.2 (Organization Scan Contract & V1 Erasure Baseline)
+*   **Current Milestone**: Milestone 1.6.2 (Organization Scan Contract & Baseline Hardening)
 *   **Export Schema Status**: V2 is the only current JSON export schema; CSV is a separate flat export format.
 
 ---

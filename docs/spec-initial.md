@@ -159,7 +159,7 @@ The Cloud Functions usage, function names, codebase, and deploy commands must be
 
 The backend must not be a generic GitHub API proxy.
 
-Only these GitHub API endpoints are allowed in legacy V1.
+Only these GitHub API endpoints are allowed in the current baseline.
 
 Standard endpoints:
 
@@ -182,7 +182,7 @@ PUT /repos/{owner}/{repo}/pages
 DELETE /repos/{owner}/{repo}/pages
 POST /repos/{owner}/{repo}/pages/builds
 
-Do not add GitHub Actions workflow API endpoints in legacy V1. legacy V1 may detect that Pages uses workflow-based deployment, but it must not identify the exact workflow YAML file.
+Do not add GitHub Actions workflow API endpoints. The system may detect that Pages uses workflow-based deployment, but it must not identify the exact workflow YAML file.
 
 8. GitHub API Request Headers
 
@@ -293,7 +293,7 @@ If Pages is disabled:
 
 Do not infer the workflow file name from "build_type".
 
-Do not inspect GitHub Actions workflow files in legacy V1.
+Do not inspect GitHub Actions workflow files.
 
 Unknown enum values from GitHub must be preserved and surfaced, not discarded.
 
@@ -455,8 +455,8 @@ Mandatory rules:
 - Never log GitHub Authorization headers.
 - Never log Firebase ID tokens.
 - Never implement a generic GitHub API proxy.
-- Never call GitHub write APIs in legacy V1.
-- Never call GitHub Actions workflow APIs in legacy V1.
+- Never call GitHub write APIs.
+- Never call GitHub Actions workflow APIs.
 - Use Firebase UID as tenant boundary.
 - Do not let users access other users’ data.
 - Anonymous data must be temporary if persisted.

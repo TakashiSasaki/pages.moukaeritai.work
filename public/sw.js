@@ -1,5 +1,5 @@
 // Minimal service worker for PWA installability
-const CACHE_NAME = 'gpa-v1-cache';
+const CACHE_NAME = 'gpa-v2-cache';
 const ASSETS = [
   '/',
   '/index.html',
