@@ -3,6 +3,8 @@ import { getLauncherLayout, saveLauncherLayout, LauncherLayoutDoc } from '../lib
 
 export function useLauncherLayout(uid: string | undefined, isAnonymous: boolean, env: string) {
   const [orderedSiteIds, setOrderedSiteIds] = useState<string[] | null>(null);
+  const [animationSpeed, setAnimationSpeed] = useState<number | null>(null);
+  const [visibleIconsRange, setVisibleIconsRange] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveWarning, setSaveWarning] = useState<string | null>(null);
   const [layoutLoading, setLayoutLoading] = useState(true);
@@ -10,24 +12,30 @@ export function useLauncherLayout(uid: string | undefined, isAnonymous: boolean,
   useEffect(() => {
     async function load() {
       setOrderedSiteIds(null);
+      setAnimationSpeed(null);
+      setVisibleIconsRange(null);
       setLayoutLoading(true);
 
       if (!uid) {
-        setOrderedSiteIds(null);
         setLayoutLoading(false);
         return;
       }
 
       try {
         const layout = await getLauncherLayout(uid, isAnonymous, env);
-        if (layout && layout.orderedSiteIds) {
-          setOrderedSiteIds(layout.orderedSiteIds);
-        } else {
-          setOrderedSiteIds(null);
+        if (layout) {
+          if (layout.orderedSiteIds) {
+            setOrderedSiteIds(layout.orderedSiteIds);
+          }
+          if (layout.animationSpeed !== undefined) {
+            setAnimationSpeed(layout.animationSpeed);
+          }
+          if (layout.visibleIconsRange !== undefined) {
+            setVisibleIconsRange(layout.visibleIconsRange);
+          }
         }
       } catch (e) {
         console.warn("Failed to load launcher layout", e);
-        setOrderedSiteIds(null);
       } finally {
         setLayoutLoading(false);
       }
@@ -36,22 +44,33 @@ export function useLauncherLayout(uid: string | undefined, isAnonymous: boolean,
     load();
   }, [uid, isAnonymous, env]);
 
-  const saveOrder = useCallback(async (ids: string[]) => {
+  const saveLayout = useCallback(async (ids: string[], options?: { animationSpeed?: number; visibleIconsRange?: number }) => {
     if (!uid) return;
 
     // Optimistic UI update
-    setOrderedSiteIds(ids);
+    if (ids) setOrderedSiteIds(ids);
+    if (options?.animationSpeed !== undefined) setAnimationSpeed(options.animationSpeed);
+    if (options?.visibleIconsRange !== undefined) setVisibleIconsRange(options.visibleIconsRange);
+    
     setSaving(true);
     setSaveWarning(null);
 
     try {
-      await saveLauncherLayout(uid, isAnonymous, ids, env);
+      // Use current state for values not provided in options
+      const currentIds = ids || orderedSiteIds || [];
+      const currentSpeed = options?.animationSpeed !== undefined ? options.animationSpeed : (animationSpeed ?? 1.0);
+      const currentRange = options?.visibleIconsRange !== undefined ? options.visibleIconsRange : (visibleIconsRange ?? 20);
+
+      await saveLauncherLayout(uid, isAnonymous, currentIds, env, {
+        animationSpeed: currentSpeed,
+        visibleIconsRange: currentRange
+      });
     } catch (e) {
-      console.warn("Failed to save layout order", e);
-      setSaveWarning("Could not save your layout to the server. Your changes are visible locally but will not persist.");
+      console.warn("Failed to save layout", e);
+      setSaveWarning("Could not save your preferences to the server. Your changes are visible locally but will not persist.");
     }
     setSaving(false);
-  }, [uid, isAnonymous, env]);
+  }, [uid, isAnonymous, env, orderedSiteIds, animationSpeed, visibleIconsRange]);
 
   const clearWarning = useCallback(() => {
     setSaveWarning(null);
@@ -59,10 +78,12 @@ export function useLauncherLayout(uid: string | undefined, isAnonymous: boolean,
 
   return {
     orderedSiteIds,
+    animationSpeed,
+    visibleIconsRange,
     saving,
     saveWarning,
     layoutLoading,
-    saveOrder,
+    saveLayout,
     clearWarning
   };
 }

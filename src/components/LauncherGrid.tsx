@@ -18,6 +18,10 @@ export interface LauncherGridProps {
   onReset?: () => void | Promise<void>;
   showReset?: boolean;
   readOnly?: boolean;
+  onOrderChange?: (ids: string[]) => void | Promise<void>;
+  animationSpeed?: number | null;
+  visibleIconsRange?: number | null;
+  onSettingsChange?: (settings: { animationSpeed?: number; visibleIconsRange?: number }) => void | Promise<void>;
 }
 
 function LauncherSiteIcon({ site, sizeClass = "w-12 h-12" }: { site: LauncherSite; sizeClass?: string }) {
@@ -386,7 +390,10 @@ export default function LauncherGrid({
   onReset,
   showReset = true,
   readOnly = false,
-  onOrderChange
+  onOrderChange,
+  animationSpeed,
+  visibleIconsRange,
+  onSettingsChange
 }: LauncherGridProps) {
   const arenaRef = React.useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = React.useState({ width: 800, height: 500 });
@@ -396,10 +403,23 @@ export default function LauncherGrid({
   const activeDragIdRef = React.useRef<string | null>(null);
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
 
-  const [speedMultiplier, setSpeedMultiplier] = React.useState(1.0); // 1.0 matches the old 0.3 internally
-  const speedMultiplierRef = React.useRef(1.0);
+  const [speedMultiplier, setSpeedMultiplier] = React.useState(animationSpeed ?? 1.0); 
+  const speedMultiplierRef = React.useRef(animationSpeed ?? 1.0);
   const [showControls, setShowControls] = React.useState(false);
-  const [maxVisibleCount, setMaxVisibleCount] = React.useState<number>(20);
+  const [maxVisibleCount, setMaxVisibleCount] = React.useState<number>(visibleIconsRange ?? 20);
+
+  // Sync props to state when they change (loading from Firestore)
+  React.useEffect(() => {
+    if (animationSpeed !== null && animationSpeed !== undefined) {
+      setSpeedMultiplier(animationSpeed);
+    }
+  }, [animationSpeed]);
+
+  React.useEffect(() => {
+    if (visibleIconsRange !== null && visibleIconsRange !== undefined) {
+      setMaxVisibleCount(visibleIconsRange);
+    }
+  }, [visibleIconsRange]);
 
   React.useEffect(() => {
     speedMultiplierRef.current = speedMultiplier;
@@ -752,7 +772,11 @@ export default function LauncherGrid({
                     max="3.0"
                     step="0.1"
                     value={speedMultiplier}
-                    onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setSpeedMultiplier(val);
+                      if (onSettingsChange) onSettingsChange({ animationSpeed: val });
+                    }}
                     className="w-32 accent-indigo-600 cursor-pointer"
                   />
                   <span className="text-xs font-mono font-medium text-slate-600 w-8">{speedMultiplier.toFixed(1)}x</span>
@@ -771,7 +795,11 @@ export default function LauncherGrid({
                     max={Math.max(sites.length, 1)}
                     step="1"
                     value={maxVisibleCount}
-                    onChange={(e) => setMaxVisibleCount(parseInt(e.target.value, 10))}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setMaxVisibleCount(val);
+                      if (onSettingsChange) onSettingsChange({ visibleIconsRange: val });
+                    }}
                     className="w-32 accent-indigo-600 cursor-pointer"
                   />
                   <span className="text-xs font-mono font-medium text-slate-600 w-8">{maxVisibleCount}</span>
@@ -804,7 +832,7 @@ export default function LauncherGrid({
 
           <div className="flex items-center gap-3 w-64">
             <label htmlFor="physicsSpeedDesktop" className="text-xs font-medium text-slate-600 whitespace-nowrap">
-              Speed
+              Animation Speed
             </label>
             <input
               id="physicsSpeedDesktop"
@@ -813,7 +841,11 @@ export default function LauncherGrid({
               max="3.0"
               step="0.1"
               value={speedMultiplier}
-              onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                setSpeedMultiplier(val);
+                if (onSettingsChange) onSettingsChange({ animationSpeed: val });
+              }}
               className="w-full accent-indigo-600 cursor-pointer"
             />
             <span className="text-xs font-mono font-medium text-slate-500 w-8">{speedMultiplier.toFixed(1)}x</span>
@@ -821,7 +853,7 @@ export default function LauncherGrid({
 
           <div className="flex items-center gap-3 w-64">
             <label htmlFor="maxVisibleDesktop" className="text-xs font-medium text-slate-600 whitespace-nowrap">
-              Visibility Limit
+              Visible Icons Range
             </label>
             <input
               id="maxVisibleDesktop"
@@ -830,7 +862,11 @@ export default function LauncherGrid({
               max={Math.max(sites.length, 1)}
               step="1"
               value={maxVisibleCount}
-              onChange={(e) => setMaxVisibleCount(parseInt(e.target.value, 10))}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                setMaxVisibleCount(val);
+                if (onSettingsChange) onSettingsChange({ visibleIconsRange: val });
+              }}
               className="w-full accent-indigo-600 cursor-pointer"
             />
             <span className="text-xs font-mono font-medium text-slate-500 w-8">{maxVisibleCount}</span>

@@ -143,18 +143,29 @@ export default function Dashboard() {
 
   const env = getEnvironmentName(import.meta.env.MODE);
   const isAnonymous = !!user?.isAnonymous;
-  const { orderedSiteIds, saving: layoutSaving, saveWarning, saveOrder } = useLauncherLayout(user?.uid, isAnonymous, env);
+  const { 
+    orderedSiteIds, 
+    animationSpeed, 
+    visibleIconsRange, 
+    saving: layoutSaving, 
+    saveWarning, 
+    saveLayout 
+  } = useLauncherLayout(user?.uid, isAnonymous, env);
   const { sites, defaultOrderedSiteIds } = useLauncherSitesFromResults(results, orderedSiteIds);
 
   const handleLauncherMove = async (index: number, direction: -1 | 1) => {
     const currentIds = sites.map(s => s.id);
     const newIds = applyLocalOrderChange(currentIds, index, direction);
-    await saveOrder(newIds);
+    await saveLayout(newIds);
   };
 
   const handleLauncherReset = async () => {
     if (!user || isAnonymous) return;
-    await saveOrder(defaultOrderedSiteIds);
+    await saveLayout(defaultOrderedSiteIds);
+  };
+
+  const handleLauncherSettingsChange = async (settings: { animationSpeed?: number; visibleIconsRange?: number }) => {
+    await saveLayout(orderedSiteIds || [], settings);
   };
 
   // Memoized JSON export string and tokenized elements to address extreme latency issues
@@ -1643,7 +1654,10 @@ export default function Dashboard() {
                 emptyMessage="Your currently loaded audit has no valid Pages sites. Adjust your scope or run a new audit."
                 showEmptyAction={false}
                 onMove={handleLauncherMove}
-                onOrderChange={saveOrder}
+                onOrderChange={saveLayout}
+                animationSpeed={animationSpeed}
+                visibleIconsRange={visibleIconsRange}
+                onSettingsChange={handleLauncherSettingsChange}
                 onReset={handleLauncherReset}
                 showReset={true}
                 readOnly={isAnonymous}

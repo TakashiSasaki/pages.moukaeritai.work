@@ -14,7 +14,15 @@ export default function LauncherPage() {
   const env = getEnvironmentName(import.meta.env.MODE);
 
   const { results, loading: resultsLoading, error } = useLatestAuditResults(user?.uid, isAnonymous, env);
-  const { orderedSiteIds, saving, saveWarning, layoutLoading, saveOrder } = useLauncherLayout(user?.uid, isAnonymous, env);
+  const { 
+    orderedSiteIds, 
+    animationSpeed, 
+    visibleIconsRange, 
+    saving, 
+    saveWarning, 
+    layoutLoading, 
+    saveLayout 
+  } = useLauncherLayout(user?.uid, isAnonymous, env);
 
   const { sites, defaultOrderedSiteIds } = useLauncherSitesFromResults(results, orderedSiteIds);
 
@@ -23,12 +31,16 @@ export default function LauncherPage() {
   const handleMove = async (index: number, direction: -1 | 1) => {
     const currentIds = sites.map(s => s.id);
     const newIds = applyLocalOrderChange(currentIds, index, direction);
-    await saveOrder(newIds);
+    await saveLayout(newIds);
   };
 
   const handleReset = async () => {
     if (!user || isAnonymous) return;
-    await saveOrder(defaultOrderedSiteIds);
+    await saveLayout(defaultOrderedSiteIds);
+  };
+
+  const handleSettingsChange = async (settings: { animationSpeed?: number; visibleIconsRange?: number }) => {
+    await saveLayout(orderedSiteIds || [], settings);
   };
 
   if (loading) {
@@ -56,7 +68,10 @@ export default function LauncherPage() {
       emptyActionTo="/"
       showEmptyAction={true}
       onMove={handleMove}
-      onOrderChange={saveOrder}
+      onOrderChange={saveLayout}
+      animationSpeed={animationSpeed}
+      visibleIconsRange={visibleIconsRange}
+      onSettingsChange={handleSettingsChange}
       onReset={handleReset}
       showReset={true}
       readOnly={false}
