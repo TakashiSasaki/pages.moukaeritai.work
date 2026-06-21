@@ -235,6 +235,13 @@ function LauncherCardItem({
     if (isDragged) {
       window.addEventListener('pointermove', handleGlobalPointerMove);
       window.addEventListener('pointerup', handlePointerUp);
+    } else {
+      // Ensure we clear the timer and close the bubble on release
+      if (pressTimer.current) {
+        clearTimeout(pressTimer.current);
+        pressTimer.current = null;
+      }
+      setIsPressed(false);
     }
     return () => {
       window.removeEventListener('pointermove', handleGlobalPointerMove);
@@ -297,49 +304,45 @@ function LauncherCardItem({
       </a>
 
       {isPressed && (
-        <div className={`absolute ${placementClasses} min-w-[280px] sm:min-w-[320px] bg-white border-2 border-indigo-600 rounded-2xl shadow-xl p-5 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100 ease-out`}>
+        <div className={`absolute ${placementClasses} w-max max-w-[220px] bg-white border border-indigo-600 rounded-lg shadow-xl p-1.5 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100 ease-out`}>
           <div className={arrowBodyClasses}></div>
           <div className={arrowBorderClasses}></div>
 
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/20 via-transparent to-purple-50/10 pointer-events-none rounded-2xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/20 via-transparent to-purple-50/10 pointer-events-none rounded-lg"></div>
           
-          <div className="flex justify-between items-start mb-4 relative z-10">
-            <LauncherSiteIcon site={site} />
-            <span className="text-[10px] text-slate-400 font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
-              AUDIT METADATA
+          <div className="flex justify-between items-start mb-1 relative z-10 gap-2">
+            <LauncherSiteIcon site={site} sizeClass="w-5 h-5" />
+            <span className="text-[9px] text-slate-400 font-mono font-semibold px-1 py-0.5 rounded-sm bg-slate-100 border border-slate-200">
+              METADATA
             </span>
           </div>
 
-          <div className="mb-4 relative z-10">
-            <h4 className="font-bold text-slate-900 text-lg break-all">
+          <div className="mb-1.5 relative z-10 text-left">
+            <h4 className="font-bold text-slate-900 text-xs truncate">
               {site.name}
             </h4>
-            <p className="text-xs text-slate-500 break-all mt-1" title={site.ownerRepo}>
+            <p className="text-[9px] text-slate-500 truncate" title={site.ownerRepo}>
               {site.ownerRepo}
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100 relative z-10">
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 truncate max-w-[140px]" title={site.hostname}>
+          <div className="flex flex-wrap gap-1 pt-1.5 border-t border-slate-100 relative z-10 text-left">
+            <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-slate-100 text-slate-700 truncate max-w-[120px]" title={site.hostname}>
               {site.hostname}
             </span>
             {site.httpsState === 'enforced' && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-50 text-emerald-700 border border-green-200">
+              <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-green-50 text-emerald-700 border border-green-200">
                 HTTPS
               </span>
             )}
             {site.deploymentMethod === 'workflow' && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-indigo-700 border border-blue-200">
+              <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-blue-50 text-indigo-700 border border-blue-200">
                 Workflow
               </span>
             )}
-            {site.isPwa ? (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-2xs">
-                PWA対応
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200">
-                PWA非対応
+            {site.isPwa && (
+              <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-2xs">
+                PWA
               </span>
             )}
           </div>
