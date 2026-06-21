@@ -1,10 +1,10 @@
-# Manual Smoke Testing Results Template (Milestone 1.6.20)
+# Manual Smoke Testing Results Template (Milestone 1.6.21)
 
 Use this document to log manual smoke testing results prior to marking a production candidate ready for the **https://pages.moukaeritai.work** environment.
 
 - **Target Public URL**: `https://pages.moukaeritai.work`
 - **Fallback Infrastructure URL**: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
-- **App Version**: `1.6.20`
+- **App Version**: `1.6.21`
 
 ---
 
@@ -20,7 +20,7 @@ Use this document to log manual smoke testing results prior to marking a product
 ## Verification Checklist
 
 ### 1. Host Health and Liveness
-- [ ] **Homepage Load:** Navigate directly to `https://pages.moukaeritai.work`. Verify the landing page loads successfully, displaying appropriate styling, typography, and version badge reading `1.6.20`.
+- [ ] **Homepage Load:** Navigate directly to `https://pages.moukaeritai.work`. Verify the landing page loads successfully, displaying appropriate styling, typography, and version badge reading `1.6.21`.
 - [ ] **Liveness Probe Endpoint:** Query the unauthenticated health endpoint `https://pages.moukaeritai.work/healthz`. Confirm it returns JSON `{ "ok": true }` with status 200 without exposing secrets.
 
 ### 2. Authentication Flow
@@ -48,7 +48,8 @@ Use this document to log manual smoke testing results prior to marking a product
 - [ ] **Session Persistence:** Refresh the launcher page. Verify that tile orders, animation speed, and visibility range remain persisted within Firestore (`settings/launcherLayout` v3 document).
 - [ ] **Dashboard Result Preview:** Navigate to a specific audit result `/results/:auditId/launcher`. Ensure the correct audit is safely loaded from cache and user settings (speed/range) are applied correctly.
 - [ ] **Visual Stacking (Regression Check):** Confirm launcher tiles do not produce NaN zIndex values. Long-press or expand a tile and verify it securely elevates above adjacent cards without visual occlusion.
-- [ ] **Direct-DOM Drag Smoothness:** Actively drag a launcher tile around. Ensure dragging is visually smooth without jank. Drop the tile and confirm the layout correctly settles into its final visual location without breaking interactions. IntersectionObserver correctly pauses circular animation offscreen.
+- [ ] **Direct-DOM Drag Smoothness:** Actively drag a launcher tile around. Ensure dragging is visually smooth without jank. Drop the tile and confirm the layout correctly settles into its final visual location without breaking interactions.
+- [ ] **Precise Observer Boundary:** Scroll launcher cards in and out of the viewport. Circular badge animation runs when visible, and pauses exactly when exiting the viewport outside of the absolute bounds (no preload margin, `rootMargin: 0px`). Resumes on exact re-entry. Dragging does not get stuck.
 - [ ] **Compact Metadata Bubble (UX Check):** Long-press a tile to see the dense metadata bubble. Confirm it appears compact (no large min-width).
 - [ ] **Release Cleanup:** Release the long-press or start dragging. Confirm the bubble closes immediately and timers are cleared.
 - [ ] **Badge Logic:** Confirm positive status badges (HTTPS, PWA) are visible, while negative states (e.g. "Not PWA") are omitted to reduce noise.

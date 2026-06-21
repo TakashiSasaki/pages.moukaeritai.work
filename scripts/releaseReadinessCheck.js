@@ -214,7 +214,7 @@ try {
 try {
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   const version = packageJson.version;
-  const EXPECTED_VERSION = '1.6.20';
+  const EXPECTED_VERSION = '1.6.21';
 
   // Validate SemVer format
   const semverRegex = /^\d+\.\d+\.\d+$/;
@@ -597,6 +597,12 @@ try {
     } else {
       printFail(`${gridFile} is missing direct-DOM physics rendering patterns (requestAnimationFrame, style.transform) or IntersectionObserver.`);
     }
+
+    if (content.includes('IntersectionObserver') && content.includes("rootMargin: '0px'") && content.includes('threshold: 0') && content.includes('animationPlayState') && !content.includes("rootMargin: '50px'")) {
+      printSuccess(`${gridFile} configures precise IntersectionObserver boundary appropriately.`);
+    } else {
+      printFail(`${gridFile} precise IntersectionObserver boundary configuration is missing or regressed.`);
+    }
   }
 
   if (fs.existsSync(implicitDoc)) {
@@ -605,6 +611,12 @@ try {
       printSuccess(`${implicitDoc} formally documents direct-DOM physics UI ephemeral rendering optimizations.`);
     } else {
       printFail(`${implicitDoc} does not document direct-DOM rendering UI optimizations.`);
+    }
+
+    if (docContent.includes("rootMargin: '0px'") && docContent.includes('threshold: 0')) {
+      printSuccess(`${implicitDoc} documents precise observer boundary.`);
+    } else {
+      printFail(`${implicitDoc} is missing precise observer boundary documentation.`);
     }
   }
 
@@ -615,6 +627,22 @@ try {
       printSuccess(`${manualSmoke} contains manual smoke checks for Direct-DOM Drag Smoothness.`);
     } else {
       printFail(`${manualSmoke} is missing Direct-DOM Drag Smoothness validation.`);
+    }
+    
+    if (smokeContent.includes('Precise Observer Boundary')) {
+      printSuccess(`${manualSmoke} contains Precise Observer Boundary checks.`);
+    } else {
+      printFail(`${manualSmoke} is missing Precise Observer Boundary checks.`);
+    }
+  }
+
+  const uiRegression = 'docs/ui-regression-plan.md';
+  if (fs.existsSync(uiRegression)) {
+    const uiRegContent = fs.readFileSync(uiRegression, 'utf8');
+    if (uiRegContent.includes('Precise Observer Boundary')) {
+      printSuccess(`${uiRegression} contains Precise Observer Boundary checks.`);
+    } else {
+      printFail(`${uiRegression} is missing Precise Observer Boundary checks.`);
     }
   }
 } catch (e) {
