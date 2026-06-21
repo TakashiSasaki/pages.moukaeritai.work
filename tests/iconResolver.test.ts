@@ -281,4 +281,85 @@ describe('Server Icon Resolver Hardening Tests', () => {
       assert.ok(result.fetchedAt);
     }
   });
+
+  describe('Additional IPv6, redirects, empty validation arguments and SVG rejection coverage', () => {
+    it('rejects unsafe IPv6 ranges', () => {
+      assert.strictEqual(isUrlSafe('http://[::1]/icon.png'), false);
+      assert.strictEqual(isUrlSafe('http://[0:0:0:0:0:0:0:1]/icon.png'), false);
+      assert.strictEqual(isUrlSafe('http://[fe80::1]/icon.png'), false);
+      assert.strictEqual(isUrlSafe('http://[fd00::100]/icon.png'), false);
+      assert.strictEqual(isUrlSafe('http://[fc00::ab]/icon.png'), false);
+      assert.strictEqual(isUrlSafe('http://[fec0::3]/icon.png'), false);
+      assert.strictEqual(isUrlSafe('https://[2001:db8::1]/icon.png'), true); // global unicast (safe)
+    });
+
+    it('rejects image/svg+xml explicitly', async () => {
+      global.fetch = async (url: any, init: any) => {
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (headerName: string) => {
+              if (headerName.toLowerCase() === 'content-type') return 'image/svg+xml';
+              if (headerName.toLowerCase() === 'content-length') return '100';
+              return null;
+            }
+          },
+          arrayBuffer: async () => new ArrayBuffer(100)
+        } as any;
+      };
+      
+      const result = await resolveExternalIcon('site1', 'https://page.com', 'https://safe.com/icon.svg', 'pwa_icon');
+      assert.strictEqual(result.ok, false);
+      assert.ok(result.error?.includes('Disallowed content-type'));
+    });
+
+    it('rejects if required parameters are missing or empty', async () => {
+      const res1 = await resolveExternalIcon('', 'https://page.com', 'https://safe.com/icon.png', 'pwa_icon');
+      const res2 = await resolveExternalIcon('site1', '', 'https://safe.com/icon.png', 'pwa_icon');
+      const res3 = await resolveExternalIcon('site1', 'https://page.com', '', 'pwa_icon');
+      const res4 = await resolveExternalIcon('site1', 'https://page.com', 'https://safe.com/icon.png', '');
+      assert.strictEqual(res1.ok, false);
+      assert.strictEqual(res2.ok, false);
+      assert.strictEqual(res3.ok, false);
+      assert.strictEqual(res4.ok, false);
+      assert.ok(res1.error?.includes('Missing required validation arguments'));
+    });
+
+    it('resolves safe relative redirects correctly', async () => {
+      let callCount = 0;
+      global.fetch = async (url: any, init: any) => {
+        callCount++;
+        if (callCount === 1) {
+          assert.strictEqual(url, 'https://safe.com/icon.png');
+          return {
+            status: 301,
+            headers: {
+              get: (headerName: string) => {
+                if (headerName.toLowerCase() === 'location') return '/images/sub-icon.png';
+                return null;
+              }
+            }
+          } as any;
+        }
+        assert.strictEqual(url, 'https://safe.com/images/sub-icon.png');
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (headerName: string) => {
+              if (headerName.toLowerCase() === 'content-type') return 'image/png';
+              if (headerName.toLowerCase() === 'content-length') return '15';
+              return null;
+            }
+          },
+          arrayBuffer: async () => new ArrayBuffer(15)
+        } as any;
+      };
+
+      const result = await resolveExternalIcon('site1', 'https://safe.com', 'https://safe.com/icon.png', 'pwa_icon');
+      assert.strictEqual(result.ok, true);
+      assert.strictEqual(callCount, 2);
+    });
+  });
 });

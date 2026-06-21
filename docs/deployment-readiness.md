@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Deployment Readiness Baseline
-Version: `1.7.2` (Organization Scan Contract & Baseline Hardening)
+Version: `1.7.3` (Organization Scan Contract & Baseline Hardening)
 
 This document formalizes the production deployment status, custom domain readiness, and infrastructure requirements for the **GitHub Pages Auditor** application.
 
@@ -26,7 +26,7 @@ The application is already running on **Google Cloud Run** in containerized prod
 *   **Status**: Active & Live
 *   **Active Custom Domain**: `pages.moukaeritai.work`
 *   **Custom Domain Status**: Active and canonical.
-*   **Current Milestone**: Milestone 1.7.2 (Organization Scan Contract & Baseline Hardening)
+*   **Current Milestone**: Milestone 1.7.3 (Organization Scan Contract & Baseline Hardening)
 
 ### Deployment Runtime Details:
 *   **Container Image**: Dual-stage light Alpine build with Node.js 20.

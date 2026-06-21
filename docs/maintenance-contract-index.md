@@ -1,6 +1,6 @@
 # Maintenance Contract Index
 
-This document serves as the authoritative index of all major maintenance contracts for the GitHub Pages Auditor application. Milestone `v1.6.22` acts as the stable release baseline representing the completed initial maintenance phase. The renewed `v1.7.x` development run (commencing with `1.7.2`) references these established contracts to define the boundaries of accepted runtime behavior, security, and UI optimizations.
+This document serves as the authoritative index of all major maintenance contracts for the GitHub Pages Auditor application. Milestone `v1.6.22` acts as the stable release baseline representing the completed initial maintenance phase. The renewed `v1.7.x` development run (commencing with `1.7.3`) references these established contracts to define the boundaries of accepted runtime behavior, security, and UI optimizations.
 
 ## Version Governance
 - **Source of Truth**: The `package.json` version string is the absolute source of truth.

@@ -92,7 +92,7 @@ export async function resolveExternalIcon(
   const timeoutMs = 4000;
   const contentCapBytes = 512 * 1024; // 512KB maximum icon size
 
-  // Scope 2: Only allow raster images for v1.7.2, reject SVG explicitly.
+  // Scope 2: Only allow raster images for v1.7.3, reject SVG explicitly.
   const allowedTypes = [
     'image/png',
     'image/jpeg',

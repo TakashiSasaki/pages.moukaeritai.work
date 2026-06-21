@@ -130,13 +130,15 @@ This project has transitioned into an active **maintenance mode** state followin
 
 ## Current Implementation Status
 - **Stable Baseline ($v1.6.22$)**: Milestone `v1.6.22` was the stable release baseline representing the completed maintenance phase. All core backend, shared, export, anonymous lifecycles, and path modules were hardened and verified via automated test suites.
-- **Renewed Development Line ($v1.7.x$)**: The `v1.7.x` development run (commencing with `1.7.2`) introduces the server-side icon resolver, the Firestore-cached Launcher site icon cache system, client-side caching with optimistic fallback rendering, and expanded automated testing.
+- **Renewed Development Line ($v1.7.x$)**: The `v1.7.x` development run (commencing with `1.7.3`) introduces the server-side icon resolver, the Firestore-cached Launcher site icon cache system, client-side caching with optimistic fallback rendering, and expanded automated testing.
+- **Milestone 1.7.x (Baseline Run)**: Established the initial implementation of the server-side icon resolver and Firestore persistence cache.
+- **Milestone 1.7.3 (Ready)**: This milestone covers Documentation, Consistency, Operational Readiness, and Visual Affordance around the launcher icon cache. It removes all debug visual indicators and enforces subtle circular border treatment.
 - Added explicit environment validation modules for frontend (`src/lib/env.ts`) and backend (`server/env.ts`) checking configuration completeness without crashing runtime operations.
 - Extracted and formalized firestore paths into a decoupled module `src/lib/firestorePaths.ts`, fully tested in the suite.
 - Established a complete, isolated, and secure security ruleset in `firestore.rules` (pointed by `firebase.json`), fully verified using rule simulation tests (`tests/rules.test.ts`).
 - Centralized organization name validation into `src/lib/validation.ts`.
 - Removed all obsolete legacy references and schemas.
-- **Development Policy**: Version `1.7.2` initiates the Launcher Icon Cache Baseline. All edits require incrementing the patch version in `package.json`, keeping documentation and scripts in sync, and maintaining perfect compatibility with all existing read-only and no-AI security constraints.
+- **Development Policy**: Version `1.7.3` initiates the Launcher Icon Cache Baseline. All edits require incrementing the patch version in `package.json`, keeping documentation and scripts in sync, and maintaining perfect compatibility with all existing read-only and no-AI security constraints.
 
 ## Deployment readiness and Rules Contract
 - **Existence Audit**:
@@ -159,7 +161,7 @@ This project has transitioned into an active **maintenance mode** state followin
   - Current Live Production URL: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
   - Region: `asia-east1`
   - Active Custom Domain: `pages.moukaeritai.work` (Active, Canonical URL)
-  - Current Major Milestone: Organization Scan Contract & Baseline Hardening (1.7.2)
+  - Current Major Milestone: Organization Scan Contract & Baseline Hardening (1.7.3)
   - Infrastructure Mutation Rule: Do not mutate DNS, Cloud Run, or Firebase Auth externally in coding-agent tasks. Only provide operator checklists.
   - Post-Assignment: Document required post-activation history.
 - **Crucial Warning**: Standard Firebase Hosting alone *cannot* run the Express backend. Firebase Hosting alone cannot run the Express backend. It must be paired with Cloud Run via proxy rewrites matching `/api/*` if edge CDN is desired.
@@ -176,7 +178,7 @@ This project has transitioned into an active **maintenance mode** state followin
 - Created `scripts/validateExamples.js` to continuously assert compliance for V2 and V2 exported samples alongside `npm run examples:validate`.
 - Defined `docs/external-consumer-guide.md` with strict interoperability requirements, ensuring registries and runtime retrievals remain out-of-scope.
 - Completely verified coverage of V2 deeply-nested `findings` taxonomy reflecting GitHub Pages DNS/SSL statuses.
-- Advanced primary build threshold to `1.7.2 (Organization Scan Contract & Baseline Hardening)` with patch version governance and public no-auth E2E validation controls.
+- Advanced primary build threshold to `1.7.3 (Organization Scan Contract & Baseline Hardening)` with patch version governance and public no-auth E2E validation controls.
 - Documented active Custom Domain `pages.moukaeritai.work`.
 - Documented icon/site metadata fetching feature representing best-effort non-blocking metadata audit findings.
 - Hardened release checks and documentation consistency checks.
@@ -208,3 +210,10 @@ The **Launcher** surface displays a user's detected GitHub Pages sites, sharing 
 - The app stores only layout and preference metadata (IDs, order, speed, range), not duplicated audit payloads, PATs, or GitHub API responses.
 - No third-party favicon proxy services are used; the application relies on direct best-effort metadata collection from the audited site and falls back to locally generated displays based on the app's initial.
 - Layout stores the ordered array of IDs, numeric animation speed, and visibility range rather than absolute x/y coordinates or ephemeral elements like zIndex.
+- **Launcher Icon Cache Contract**: 
+  - **Ownership & Control**: The React frontend owns and manages Firestore cache persistence directly. The server owns the narrow `/api/icon/resolve` endpoint only.
+  - **Decoupled Security**: No user credentials (PATs, cookies, Firebase ID tokens, or Authorization headers) are ever forwarded from the backend server to external icon URLs.
+  - **Format Exclusions**: Only raster assets are permissible; SVG body caching is explicitly out of scope because of script-injection vulnerabilities.
+  - **No Generic Proxying**: The resolver is not a proxy and rejects disallowed schemes (e.g., non-http/https, loopbacks, internal endpoints).
+  - **Silent Best-Effort Fallbacks**: Any cache retrieval, network status, or resolution error must fail silently and transition cleanly down the icon fallback hierarchy.
+  - **Affordance & Visual Legibility**: In production builds, no tiny text stickers/badges (e.g., `"CACHED"`) are permitted. Cache status must be indicated purely by subtle circular backdrop or border outline differences to preserve design cohesion.

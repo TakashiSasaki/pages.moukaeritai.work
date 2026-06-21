@@ -172,15 +172,10 @@ const LauncherSiteIcon = React.memo(function LauncherSiteIcon({ site, sizeClass 
           <img
             src={cachedDataUrl!}
             alt="Cached Site Icon"
-            className={`${sizeClass} object-contain rounded-xl select-none shrink-0 border border-indigo-200 bg-white p-1 transition-all group-hover:scale-105 duration-300 shadow-xs`}
+            className={`${sizeClass} object-contain rounded-xl select-none shrink-0 border-2 border-indigo-200/50 dark:border-indigo-800/50 bg-indigo-50/30 dark:bg-indigo-950/20 p-1 transition-all group-hover:scale-105 duration-300 shadow-xs`}
             onError={() => setCachedDataUrl(null)}
             referrerPolicy="no-referrer"
           />
-          {import.meta.env.MODE !== 'production' && (
-            <span className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-[8px] font-extrabold px-1 rounded-sm border border-white shadow-2xs select-none">
-              CACHED
-            </span>
-          )}
         </div>
       )}
       {showPwa && (
