@@ -143,6 +143,7 @@ interface LauncherCardItemProps {
   y: number;
   isDragged: boolean;
   readOnly: boolean;
+  baseIndex: number;
   onDragStart: (e: React.PointerEvent, id: string) => void;
   onDragEnd: () => void;
 }
@@ -153,6 +154,7 @@ function LauncherCardItem({
   y,
   isDragged,
   readOnly,
+  baseIndex,
   onDragStart,
   onDragEnd,
 }: LauncherCardItemProps) {
@@ -269,7 +271,7 @@ function LauncherCardItem({
         width: 112,
         height: 112,
         transform: `translate3d(${x - 56}px, ${y - 56}px, 0)`,
-        zIndex: isDragged ? 40 : isPressed ? 50 : 20,
+        zIndex: isDragged ? 40000 + (1000 - baseIndex) : isPressed ? 50000 + (1000 - baseIndex) : 20000 + (1000 - baseIndex),
         cursor: isDragged ? 'grabbing' : 'grab',
         transition: isDragged ? 'none' : 'transform 0.15s cubic-bezier(0.25, 0.8, 0.25, 1)',
       }}
@@ -368,6 +370,7 @@ interface PhysicsNode {
   vx: number;
   vy: number;
   radius: number;
+  baseIndex: number;
 }
 
 export default function LauncherGrid({
@@ -396,6 +399,7 @@ export default function LauncherGrid({
   const [speedMultiplier, setSpeedMultiplier] = React.useState(1.0); // 1.0 matches the old 0.3 internally
   const speedMultiplierRef = React.useRef(1.0);
   const [showControls, setShowControls] = React.useState(false);
+  const [maxVisibleCount, setMaxVisibleCount] = React.useState<number>(20);
 
   React.useEffect(() => {
     speedMultiplierRef.current = speedMultiplier;
@@ -425,10 +429,12 @@ export default function LauncherGrid({
     const cy = dimensions.height / 2;
     
     const prev = nodesRef.current;
-    const synced = sites.map((site, index) => {
+    const activeSites = sites.slice(0, maxVisibleCount);
+
+    const synced = activeSites.map((site, index) => {
       const existing = prev.find(n => n.id === site.id);
       if (existing) {
-        return { ...existing, site };
+        return { ...existing, site, baseIndex: index };
       }
       
       // Compute deterministic outward spiral from center
@@ -441,13 +447,14 @@ export default function LauncherGrid({
         y: cy + Math.sin(angle) * distance,
         vx: 0,
         vy: 0,
-        radius: 56
+        radius: 56,
+        baseIndex: index
       };
     });
     
     nodesRef.current = synced;
     setPhysicsNodes(synced);
-  }, [sites, dimensions.width, dimensions.height]);
+  }, [sites, dimensions.width, dimensions.height, maxVisibleCount]);
 
   // Regular periodic updates inside a standard requestAnimationFrame loops
   React.useEffect(() => {
@@ -578,13 +585,16 @@ export default function LauncherGrid({
       return a.x - b.x;
     });
 
-    const newIds = sorted.map(n => n.id);
+    const newActiveIds = sorted.map(n => n.id);
+    const hiddenIds = sites.filter(s => !newActiveIds.includes(s.id)).map(s => s.id);
+    const finalIds = [...newActiveIds, ...hiddenIds];
+    
     const oldIds = sites.map(s => s.id);
 
-    const hasOrderChanged = newIds.some((id, index) => id !== oldIds[index]);
+    const hasOrderChanged = finalIds.some((id, index) => id !== oldIds[index]);
 
     if (hasOrderChanged && onOrderChange) {
-      onOrderChange(newIds);
+      onOrderChange(finalIds);
     }
 
     activeDragIdRef.current = null;
@@ -709,30 +719,53 @@ export default function LauncherGrid({
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.15] pointer-events-none mix-blend-multiply animate-[pulse_10s_ease-in-out_infinite]"></div>
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col relative z-10 min-h-0">
         
-        {/* Mobile Speed Controls Toggle (Fixed floating at corner) */}
+        {/* Mobile Controls Toggle (Fixed floating at corner) */}
         <div className="sm:hidden absolute bottom-6 right-6 z-50 flex flex-col items-end gap-2">
           {showControls && (
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-slate-200 flex flex-col gap-3 shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <div className="flex items-center justify-between gap-4">
-                <label htmlFor="physicsSpeedMobile" className="text-xs font-bold text-slate-700 whitespace-nowrap">
-                  Animation Speed
-                </label>
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-slate-200 flex flex-col gap-4 shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-2">
+                <span className="text-sm font-bold text-slate-800">Layout Settings</span>
                 <button aria-label="Close settings" className="text-slate-400 hover:text-slate-600" onClick={() => setShowControls(false)}>
                    <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex items-center gap-3">
-                <input
-                  id="physicsSpeedMobile"
-                  type="range"
-                  min="0.0"
-                  max="3.0"
-                  step="0.1"
-                  value={speedMultiplier}
-                  onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
-                  className="w-32 accent-indigo-600 cursor-pointer"
-                />
-                <span className="text-xs font-mono font-medium text-slate-600 w-8">{speedMultiplier.toFixed(1)}x</span>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="physicsSpeedMobile" className="text-xs font-semibold text-slate-600 whitespace-nowrap">
+                  Animation Speed
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="physicsSpeedMobile"
+                    type="range"
+                    min="0.0"
+                    max="3.0"
+                    step="0.1"
+                    value={speedMultiplier}
+                    onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
+                    className="w-32 accent-indigo-600 cursor-pointer"
+                  />
+                  <span className="text-xs font-mono font-medium text-slate-600 w-8">{speedMultiplier.toFixed(1)}x</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="maxVisibleMobile" className="text-xs font-semibold text-slate-600 whitespace-nowrap">
+                  Visible Icons Range
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="maxVisibleMobile"
+                    type="range"
+                    min="1"
+                    max={Math.max(sites.length, 1)}
+                    step="1"
+                    value={maxVisibleCount}
+                    onChange={(e) => setMaxVisibleCount(parseInt(e.target.value, 10))}
+                    className="w-32 accent-indigo-600 cursor-pointer"
+                  />
+                  <span className="text-xs font-mono font-medium text-slate-600 w-8">{maxVisibleCount}</span>
+                </div>
               </div>
             </div>
           )}
@@ -741,7 +774,7 @@ export default function LauncherGrid({
             <button 
               onClick={() => setShowControls(true)}
               className="w-12 h-12 bg-white rounded-full shadow-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:text-indigo-600 hover:border-indigo-200 focus:outline-none hover:bg-indigo-50 transition-colors"
-              aria-label="Toggle animation speed controls"
+              aria-label="Toggle layout settings"
             >
               <Settings2 className="w-5 h-5" />
             </button>
@@ -749,14 +782,20 @@ export default function LauncherGrid({
         </div>
 
         {/* Desktop inline slider (hidden on mobile) */}
-        <div className="hidden sm:flex mb-4 bg-white/80 backdrop-blur-md rounded-xl p-4 shadow-sm border border-slate-200 items-center justify-between gap-4 shrink-0 mx-4 sm:mx-0">
+        <div className="hidden sm:flex mb-4 bg-white/80 backdrop-blur-md rounded-xl p-4 shadow-sm border border-slate-200 items-center justify-start gap-8 shrink-0 mx-4 sm:mx-0">
           <div className="flex items-center gap-2">
             <Settings2 className="w-4 h-4 text-slate-400" />
-            <label htmlFor="physicsSpeedDesktop" className="text-sm font-semibold text-slate-700 whitespace-nowrap">
-              Animation Speed
-            </label>
+            <span className="text-sm font-semibold text-slate-700 whitespace-nowrap">
+              Layout Settings
+            </span>
           </div>
-          <div className="flex flex-1 max-w-sm items-center gap-4">
+
+          <div className="w-px h-6 bg-slate-200" />
+
+          <div className="flex items-center gap-3 w-64">
+            <label htmlFor="physicsSpeedDesktop" className="text-xs font-medium text-slate-600 whitespace-nowrap">
+              Speed
+            </label>
             <input
               id="physicsSpeedDesktop"
               type="range"
@@ -767,7 +806,24 @@ export default function LauncherGrid({
               onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
               className="w-full accent-indigo-600 cursor-pointer"
             />
-            <span className="text-xs font-mono font-medium text-slate-500 w-10">{speedMultiplier.toFixed(1)}x</span>
+            <span className="text-xs font-mono font-medium text-slate-500 w-8">{speedMultiplier.toFixed(1)}x</span>
+          </div>
+
+          <div className="flex items-center gap-3 w-64">
+            <label htmlFor="maxVisibleDesktop" className="text-xs font-medium text-slate-600 whitespace-nowrap">
+              Visibility Limit
+            </label>
+            <input
+              id="maxVisibleDesktop"
+              type="range"
+              min="1"
+              max={Math.max(sites.length, 1)}
+              step="1"
+              value={maxVisibleCount}
+              onChange={(e) => setMaxVisibleCount(parseInt(e.target.value, 10))}
+              className="w-full accent-indigo-600 cursor-pointer"
+            />
+            <span className="text-xs font-mono font-medium text-slate-500 w-8">{maxVisibleCount}</span>
           </div>
         </div>
 
@@ -797,6 +853,7 @@ export default function LauncherGrid({
               site={node.site}
               x={node.x}
               y={node.y}
+              baseIndex={node.baseIndex}
               isDragged={node.id === activeDragId}
               readOnly={readOnly}
               onDragStart={handleDragStart}
