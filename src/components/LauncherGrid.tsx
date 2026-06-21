@@ -24,7 +24,7 @@ export interface LauncherGridProps {
   onSettingsChange?: (settings: { animationSpeed?: number; visibleIconsRange?: number }) => void | Promise<void>;
 }
 
-function LauncherSiteIcon({ site, sizeClass = "w-12 h-12" }: { site: LauncherSite; sizeClass?: string }) {
+const LauncherSiteIcon = React.memo(function LauncherSiteIcon({ site, sizeClass = "w-12 h-12" }: { site: LauncherSite; sizeClass?: string }) {
   const [pwaError, setPwaError] = React.useState(false);
   const [favError, setFavError] = React.useState(false);
 
@@ -72,9 +72,9 @@ function LauncherSiteIcon({ site, sizeClass = "w-12 h-12" }: { site: LauncherSit
       )}
     </div>
   );
-}
+});
 
-function CircularDomainBadge({ site }: { site: LauncherSite }) {
+const CircularDomainBadge = React.memo(function CircularDomainBadge({ site }: { site: LauncherSite }) {
   const [isHovered, setIsHovered] = React.useState(false);
   const [isVisible, setIsVisible] = React.useState(true);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -181,7 +181,7 @@ function CircularDomainBadge({ site }: { site: LauncherSite }) {
       </svg>
     </div>
   );
-}
+});
 
 interface LauncherCardItemProps {
   site: LauncherSite;
@@ -194,7 +194,7 @@ interface LauncherCardItemProps {
   onDragEnd: () => void;
 }
 
-function LauncherCardItem({
+const LauncherCardItem = React.memo(function LauncherCardItem({
   site,
   x,
   y,
@@ -258,11 +258,6 @@ function LauncherCardItem({
     const dy = e.clientY - startY.current;
     if (Math.hypot(dx, dy) > 5) {
       hasMoved.current = true;
-      if (pressTimer.current) {
-        clearTimeout(pressTimer.current);
-        pressTimer.current = null;
-      }
-      setIsPressed(false);
     }
   };
 
@@ -315,6 +310,8 @@ function LauncherCardItem({
     arrowBodyClasses = 'absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[8px] border-b-[8px] border-r-[8px] border-t-transparent border-b-transparent border-r-white z-50';
   }
 
+  const computedZIndex = isDragged ? 40000 + (1000 - baseIndex) + (y > startNodeY.current ? -10000 : y < startNodeY.current ? 10000 : 0) : isPressed ? 50000 + (1000 - baseIndex) : 20000 + (1000 - baseIndex);
+
   return (
     <div 
       id={`launcher-node-${site.id}`}
@@ -327,7 +324,7 @@ function LauncherCardItem({
         width: 112,
         height: 112,
         transform: `translate3d(${x - 56}px, ${y - 56}px, 0)`,
-        zIndex: isDragged ? 40000 + (1000 - baseIndex) + (y > startNodeY.current ? -10000 : y < startNodeY.current ? 10000 : 0) : isPressed ? 50000 + (1000 - baseIndex) : 20000 + (1000 - baseIndex),
+        zIndex: computedZIndex,
         cursor: isDragged ? 'grabbing' : 'grab',
         transition: isDragged ? 'none' : 'transform 0.15s cubic-bezier(0.25, 0.8, 0.25, 1)',
       }}
@@ -375,6 +372,9 @@ function LauncherCardItem({
             <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-slate-100 text-slate-700 truncate max-w-[120px]" title={site.hostname}>
               {site.hostname}
             </span>
+            <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-mono font-medium bg-slate-100 text-slate-700" title={`z-index: ${computedZIndex}`}>
+              z: {computedZIndex}
+            </span>
             {site.httpsState === 'enforced' && (
               <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-green-50 text-emerald-700 border border-green-200">
                 HTTPS
@@ -395,7 +395,7 @@ function LauncherCardItem({
       )}
     </div>
   );
-}
+});
 
 export interface LauncherGridProps {
   sites: LauncherSite[];
@@ -638,25 +638,23 @@ export default function LauncherGrid({
     return () => cancelAnimationFrame(animationFrameId);
   }, [dimensions]);
 
-  const handleDragStart = (e: React.PointerEvent, id: string) => {
+  const handleDragStart = React.useCallback((e: React.PointerEvent, id: string) => {
     if (readOnly) return;
     activeDragIdRef.current = id;
-    setActiveDragId(id);
-    setPhysicsNodes([...nodesRef.current]);
-  };
+    setActiveDragId(() => id);
+    setPhysicsNodes(() => [...nodesRef.current]);
+  }, [readOnly]);
 
-  const handleDragEnd = () => {
+  const handleDragEnd = React.useCallback(() => {
     const dragId = activeDragIdRef.current;
     if (!dragId) return;
 
     // Calculate final layout positions to resolve new ordered list representation
     const finalNodes = [...nodesRef.current];
-    // Sort primarily by row Y coordinates (bucketed to 150px rows), then by X coordinate
+    // Sort strictly by Y coordinate as requested, falling back to X if exactly equal
     const sorted = [...finalNodes].sort((a, b) => {
-      const rowA = Math.floor(a.y / 150);
-      const rowB = Math.floor(b.y / 150);
-      if (rowA !== rowB) {
-        return rowA - rowB;
+      if (a.y !== b.y) {
+        return a.y - b.y;
       }
       return a.x - b.x;
     });
@@ -674,9 +672,9 @@ export default function LauncherGrid({
     }
 
     activeDragIdRef.current = null;
-    setActiveDragId(null);
-    setPhysicsNodes([...nodesRef.current]);
-  };
+    setActiveDragId(() => null);
+    setPhysicsNodes(() => [...nodesRef.current]);
+  }, [sites, onOrderChange]);
 
   const handleArenaPointerMove = (e: React.PointerEvent) => {
     const dragId = activeDragIdRef.current;

@@ -28,20 +28,20 @@ export default function LauncherPage() {
 
   const loading = resultsLoading || layoutLoading;
 
-  const handleMove = async (index: number, direction: -1 | 1) => {
+  const handleMove = React.useCallback(async (index: number, direction: -1 | 1) => {
     const currentIds = sites.map(s => s.id);
     const newIds = applyLocalOrderChange(currentIds, index, direction);
     await saveLayout(newIds);
-  };
+  }, [sites, saveLayout]);
 
-  const handleReset = async () => {
+  const handleReset = React.useCallback(async () => {
     if (!user || isAnonymous) return;
     await saveLayout(defaultOrderedSiteIds);
-  };
+  }, [user, isAnonymous, saveLayout, defaultOrderedSiteIds]);
 
-  const handleSettingsChange = async (settings: { animationSpeed?: number; visibleIconsRange?: number }) => {
+  const handleSettingsChange = React.useCallback(async (settings: { animationSpeed?: number; visibleIconsRange?: number }) => {
     await saveLayout(orderedSiteIds || [], settings);
-  };
+  }, [saveLayout, orderedSiteIds]);
 
   if (loading) {
     return (
