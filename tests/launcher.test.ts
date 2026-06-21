@@ -57,16 +57,16 @@ describe('Launcher Functions', () => {
     assert.strictEqual(sites[0].id, 'o/r');
   });
 
-  it('applies saved order and appends remaining', () => {
+  it('applies saved order and prepends remaining', () => {
     const sites: any[] = [
       { id: '1', name: 'one' },
       { id: '2', name: 'two' },
       { id: '3', name: 'three' }
     ];
     const ordered = applySavedOrder(sites, ['3', '1']);
-    assert.strictEqual(ordered[0].id, '3');
-    assert.strictEqual(ordered[1].id, '1');
-    assert.strictEqual(ordered[2].id, '2');
+    assert.strictEqual(ordered[0].id, '2');
+    assert.strictEqual(ordered[1].id, '3');
+    assert.strictEqual(ordered[2].id, '1');
   });
 
   it('ignores saved IDs missing from current audit', () => {

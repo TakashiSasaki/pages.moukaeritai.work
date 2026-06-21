@@ -120,16 +120,17 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - `src/` - React frontend code.
 - `server/` - Express backend code.
 - `docs/` - Documentation and specs.
+- `docs/implicit-design-decisions.md` - Explicit compilation of unspoken design rules (e.g. UX patterns, layouts, and volatile statuses).
 - `schemas/` - Export JSON schemas.
 
 ## Current Implementation Status
-- Milestone 1.6.10 (Maintenance Documentation & Launcher Regression Closure) is fully completed. All core backend, shared, export, anonymous lifecycles, and path modules are hardened and verified via automated test suites.
+- Milestone 1.6.11 (Maintenance Documentation & Launcher Regression Closure) is fully completed. All core backend, shared, export, anonymous lifecycles, and path modules are hardened and verified via automated test suites.
 - Added explicit environment validation modules for frontend (`src/lib/env.ts`) and backend (`server/env.ts`) checking configuration completeness without crashing runtime operations.
 - Extracted and formalized firestore paths into a decoupled module `src/lib/firestorePaths.ts`, fully tested in the suite.
 - Established a complete, isolated, and secure security ruleset in `firestore.rules` (pointed by `firebase.json`), fully verified using rule simulation tests (`tests/rules.test.ts`).
 - Centralized organization name validation into `src/lib/validation.ts`.
 - Removed all obsolete legacy references and schemas.
-- **Maintenance Policy**: 1.6.10 acts as the fixed development-complete baseline; the project is in maintenance mode. Coding agents must not initiate broad new feature work unless the user explicitly opens a new milestone. File-changing tasks still require a patch version bump and English commit message output.
+- **Maintenance Policy**: 1.6.11 acts as the fixed development-complete baseline; the project is in maintenance mode. Coding agents must not initiate broad new feature work unless the user explicitly opens a new milestone. File-changing tasks still require a patch version bump and English commit message output.
 
 ## Deployment readiness and Rules Contract
 - **Existence Audit**:
@@ -152,7 +153,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
   - Current Live Production URL: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
   - Region: `asia-east1`
   - Active Custom Domain: `pages.moukaeritai.work` (Active, Canonical URL)
-  - Current Major Milestone: Organization Scan Contract & Baseline Hardening (1.6.10)
+  - Current Major Milestone: Organization Scan Contract & Baseline Hardening (1.6.11)
   - Infrastructure Mutation Rule: Do not mutate DNS, Cloud Run, or Firebase Auth externally in coding-agent tasks. Only provide operator checklists.
   - Post-Assignment: Document required post-activation history.
 - **Crucial Warning**: Standard Firebase Hosting alone *cannot* run the Express backend. Firebase Hosting alone cannot run the Express backend. It must be paired with Cloud Run via proxy rewrites matching `/api/*` if edge CDN is desired.
@@ -162,13 +163,14 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 - Full browser E2E automated regressions is a future roadmap milestone documented under `docs/ui-regression-plan.md`.
 
 ## Change Log for Agents
+- Documented unspoken UX rules (Z-Index volatility, Prepend layouts, Protocol Allowlists, SSL heuristics) into `docs/implicit-design-decisions.md` to surface implicitly encoded UI/architecture behavior.
 - Decoupled PAT reference from export contexts and replaced it with safe token metadata (`tokenType`).
 - Generated proper external consumer sample artifacts (`json` and `csv`) with static IDs safely under `examples/`.
 - Introduced `schemas/schema-identifiers.json` as the local manifest mapping semantic schema versions to URNs.
 - Created `scripts/validateExamples.js` to continuously assert compliance for V2 and V2 exported samples alongside `npm run examples:validate`.
 - Defined `docs/external-consumer-guide.md` with strict interoperability requirements, ensuring registries and runtime retrievals remain out-of-scope.
 - Completely verified coverage of V2 deeply-nested `findings` taxonomy reflecting GitHub Pages DNS/SSL statuses.
-- Advanced primary build threshold to `1.6.10 (Organization Scan Contract & Baseline Hardening)` with patch version governance and public no-auth E2E validation controls.
+- Advanced primary build threshold to `1.6.11 (Organization Scan Contract & Baseline Hardening)` with patch version governance and public no-auth E2E validation controls.
 - Documented active Custom Domain `pages.moukaeritai.work`.
 - Documented icon/site metadata fetching feature representing best-effort non-blocking metadata audit findings.
 - Hardened release checks and documentation consistency checks.

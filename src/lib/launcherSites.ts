@@ -111,10 +111,7 @@ export function applySavedOrder(sites: LauncherSite[], savedIds: string[]): Laun
     }
   }
 
-  // Append any remaining sites not in saved layout
-  for (const site of Array.from(siteMap.values())) {
-    ordered.push(site);
-  }
-
-  return ordered;
+  // Prepend any remaining sites not in saved layout
+  const remaining = Array.from(siteMap.values());
+  return [...remaining, ...ordered];
 }
