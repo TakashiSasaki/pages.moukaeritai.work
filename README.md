@@ -1,5 +1,5 @@
 # GitHub Pages Auditor
-Version: `1.7.4` (Launcher Icon Cache Baseline)
+Version: `1.7.5` (Launcher Icon Cache Baseline)
 
 GitHub Pages Auditor is a multi-user web application that audits GitHub Pages settings across repositories accessible to fine-grained or classic Personal Access Tokens (PATs). It displays custom domain configuration status, HTTPS certificate state, and Pages deployment methods securely without modifying any settings.
 
@@ -8,7 +8,7 @@ GitHub Pages Auditor is a multi-user web application that audits GitHub Pages se
 ## Core Features & Milestone Status
 - **Status**: This project is in a **development-complete** state and has transitioned into active **maintenance mode**.
 - **Stable Baseline ($1.6.22$)**: Version `1.6.22` is the stable release baseline representing the completed initial maintenance phase.
-- **Renewed Development Line ($1.7.x$)**: The `1.7.x` milestone (beginning with `1.7.4`) is the renewed development line, introducing the Firestore-cached Launcher site icon cache system while preserving all existing non-negotiable security exclusions and read-only architecture constraints.
+- **Renewed Development Line ($1.7.x$)**: The `1.7.x` milestone (beginning with `1.7.5`) is the renewed development line, introducing the Firestore-cached Launcher site icon cache system while preserving all existing non-negotiable security exclusions and read-only architecture constraints.
 - **Production Baseline**: All core backend models, shared classification algorithms, and Firestore security layers are fully hardened and integrated under the latest Node.js test runner.
 - **Secure Backend API Auditing**: Directly proxies standard GitHub API endpoints from the Express backend via safe GET methods. The browser manages its own copy of the PAT and persists it in Firestore under authenticated user isolation using the Firebase Client SDK. The backend only ever holds the PAT temporarily inside the `x-temp-pat` header for the lifetime of the request.
 - **Classification Engine**: Pure shared classification models mapping GitHub Pages metadata into standardized custom domain and SSL status models.
@@ -117,7 +117,7 @@ firebase deploy --only firestore:rules
 *   **Active Production Region**: `asia-east1`
 *   **Deployment Status**: Google Cloud Run is our active, live runtime.
 *   **Custom Domain Status**: Active and canonical custom domain integration (`pages.moukaeritai.work`).
-*   **Current Milestone**: Milestone 1.7.4 (Launcher Icon Cache Documentation, Consistency, Operational Readiness & Visual Affordance)
+*   **Current Milestone**: Milestone 1.7.5 (Launcher Icon Cache Documentation, Consistency, Operational Readiness & Visual Affordance)
 *   **Export Schema Status**: V2 is the only current JSON export schema; CSV is a separate flat export format.
 
 ---
@@ -164,7 +164,7 @@ The **Launcher** surface displays a user's detected GitHub Pages sites, sharing 
 To guarantee stability, alignment, and release consistency across development cycles:
 - **Mandatory Version Bumps**: Every file-changing task performed by an agent must bump the patch version inside `package.json`.
 - **Sourced Authority**: The single source of truth for the application version is exclusively the `package.json` `"version"` field. All documentation (README, AGENTS, manuals) and dynamic runtime dependencies (User-Agent strings, API responses, client headers) must align dynamically with this package.json configuration.
-- **Commit Format**: All changes must culminate in a descriptive English commit message outlining the milestone and patch alignment (e.g., `chore(release): close development-complete baseline at 1.7.4`).
+- **Commit Format**: All changes must culminate in a descriptive English commit message outlining the milestone and patch alignment (e.g., `chore(release): close development-complete baseline at 1.7.5`).
 
 ---
 

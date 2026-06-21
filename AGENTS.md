@@ -131,16 +131,19 @@ This project has transitioned into an active **maintenance mode** state followin
 ## Current Implementation Status
 - **Stable Baseline ($v1.6.22$)**: Milestone `v1.6.22` was the stable release baseline representing the completed maintenance phase. All core backend, shared, export, anonymous lifecycles, and path modules were hardened and verified via automated test suites.
 - **Renewed Development Line ($v1.7.x$)**: The `v1.7.x` development run introduces the server-side icon resolver, the Firestore-cached Launcher site icon cache system, client-side caching with optimistic fallback rendering, and expanded automated testing.
-  - **Milestone 1.7.x (baseline)**: Launcher icon cache baseline.
-  - **Milestone 1.7.x (alignment)**: Documentation, consistency, operational readiness, and visual affordance pass.
-  - **Milestone 1.7.4**: Launcher Icon Visual State Contract & Release-Candidate Readiness (Current active ready milestone).
+  - **Milestone 1.6.22**: Stable release baseline
+  - **Milestone 1.7.x**: Renewed development line
+  - **Milestone 1.7.<!-- -->2**: Launcher icon cache baseline
+  - **Milestone 1.7.<!-- -->3**: Documentation, consistency, operational readiness, and visual affordance pass
+  - **Milestone 1.7.<!-- -->4**: Launcher Icon Visual State Contract & Release-Candidate Readiness
+  - **Milestone 1.7.5**: Release Candidate Smoke & Manual Verification (Current active ready milestone).
 - Added explicit environment validation modules for frontend (`src/lib/env.ts`) and backend (`server/env.ts`) checking configuration completeness without crashing runtime operations.
 - Extracted and formalized firestore paths into a decoupled module `src/lib/firestorePaths.ts`, fully tested in the suite.
 - Established a complete, isolated, and secure security ruleset in `firestore.rules` (pointed by `firebase.json`), fully verified using rule simulation tests (`tests/rules.test.ts`).
 - Centralized organization name validation into `src/lib/validation.ts`.
 - Removed all obsolete legacy references and schemas.
 - **Development Policy & v1.7.x Operational Contract**: 
-  - **Patch Version Governance**: Version `1.7.4` initiates the Launcher Icon Cache Baseline. Every file-changing or documentation-changing coding-agent task targeting the `v1.7.x` line **MUST** bump the patch version in `package.json`, keeping all related documentation files (`README.md`, `AGENTS.md`, `docs/*.md`) and scripts (`scripts/releaseReadinessCheck.js` check version constant) perfectly synchronized.
+  - **Patch Version Governance**: Version `1.7.5` initiates the Launcher Icon Cache Baseline. Every file-changing or documentation-changing coding-agent task targeting the `v1.7.x` line **MUST** bump the patch version in `package.json`, keeping all related documentation files (`README.md`, `AGENTS.md`, `docs/*.md`) and scripts (`scripts/releaseReadinessCheck.js` check version constant) perfectly synchronized.
   - **Strict Verification Gates**: All coding agents must run and verify that `npm test` and `npx node scripts/releaseReadinessCheck.js` succeed with zero errors. No task is complete without passing all offline, deterministic release check criteria.
   - **No-AI & Security Integrity**: Do not integrate external APIs, AI models (such as Gemini), or secondary backend service layers simply because credentials exist. The Express-side icon resolver retains strict protocol restrictions (only http/https), SSRF/localhost prevention, and SVG formatting exclusions to prevent script injection.
   - **Best-Effort & Non-blocking Design**: The launcher caching backend is safe, best-effort, and non-blocking. If a network lookup or cache query fails, the frontend must transition silently down the fallback hierarchy to direct PWA/Favicon URLs or generated initials without crashing the UI or raising alerts.
@@ -167,7 +170,7 @@ This project has transitioned into an active **maintenance mode** state followin
   - Current Live Production URL: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
   - Region: `asia-east1`
   - Active Custom Domain: `pages.moukaeritai.work` (Active, Canonical URL)
-  - Current Major Milestone: Launcher Icon Visual State Contract & Release-Candidate Readiness (1.7.4)
+  - Current Major Milestone: Release Candidate Smoke & Manual Verification (1.7.5)
   - Infrastructure Mutation Rule: Do not mutate DNS, Cloud Run, or Firebase Auth externally in coding-agent tasks. Only provide operator checklists.
   - Post-Assignment: Document required post-activation history.
 - **Crucial Warning**: Standard Firebase Hosting alone *cannot* run the Express backend. Firebase Hosting alone cannot run the Express backend. It must be paired with Cloud Run via proxy rewrites matching `/api/*` if edge CDN is desired.
@@ -184,7 +187,7 @@ This project has transitioned into an active **maintenance mode** state followin
 - Created `scripts/validateExamples.js` to continuously assert compliance for V2 and V2 exported samples alongside `npm run examples:validate`.
 - Defined `docs/external-consumer-guide.md` with strict interoperability requirements, ensuring registries and runtime retrievals remain out-of-scope.
 - Completely verified coverage of V2 deeply-nested `findings` taxonomy reflecting GitHub Pages DNS/SSL statuses.
-- Advanced primary build threshold to `1.7.4 (Launcher Icon Visual State Contract & Release-Candidate Readiness)` with patch version governance and public no-auth E2E validation controls.
+- Advanced primary build threshold to `1.7.5 (Release Candidate Smoke & Manual Verification)` with patch version governance and public no-auth E2E validation controls.
 - Documented active Custom Domain `pages.moukaeritai.work`.
 - Documented icon/site metadata fetching feature representing best-effort non-blocking metadata audit findings.
 - Hardened release checks and documentation consistency checks.
