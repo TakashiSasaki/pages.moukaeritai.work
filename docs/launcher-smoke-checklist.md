@@ -1,6 +1,6 @@
-# Launcher Manual Smoke Verification Checklist (v1.7.28)
+# Launcher Manual Smoke Verification Checklist (v1.7.29)
 
-This helper document guides repository operators and QA engineers through manual visual validation steps for the **v1.7.28: Launcher Icon Cache** system on active staging/dev environments.
+This helper document guides repository operators and QA engineers through manual visual validation steps for the **v1.7.29: Launcher Icon Cache** system on active staging/dev environments.
 
 ---
 

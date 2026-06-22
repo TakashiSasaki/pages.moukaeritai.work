@@ -1307,7 +1307,18 @@ export default function Dashboard() {
                       <div className="flex flex-wrap items-end gap-2.5 flex-1 min-w-0">
                         {/* Search */}
                         <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Search repositories</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Search repositories</span>
+                            <button
+                              type="button"
+                              onClick={() => setColumnGuideModal('repository')}
+                              className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors"
+                              title="View Search Filter details"
+                              aria-label="Explain Search filter"
+                            >
+                              <HelpCircle className="w-3 h-3" />
+                            </button>
+                          </div>
                           <div className="relative">
                             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
                             <input 
@@ -1331,7 +1342,18 @@ export default function Dashboard() {
 
                         {/* Status */}
                         <div className="flex flex-col gap-1 min-w-[120px] flex-1 sm:flex-initial">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Pages Status</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Pages Status</span>
+                            <button
+                              type="button"
+                              onClick={() => setColumnGuideModal('pagesStatus')}
+                              className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors"
+                              title="View Pages Status details"
+                              aria-label="Explain Pages Status filter"
+                            >
+                              <HelpCircle className="w-3 h-3" />
+                            </button>
+                          </div>
                           <select 
                             className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:border-slate-800 cursor-pointer font-sans font-normal"
                             value={statusFilter}
@@ -1348,7 +1370,18 @@ export default function Dashboard() {
 
                         {/* Domain */}
                         <div className="flex flex-col gap-1 min-w-[120px] flex-1 sm:flex-initial">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Custom Domain</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Custom Domain</span>
+                            <button
+                              type="button"
+                              onClick={() => setColumnGuideModal('customDomain')}
+                              className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors"
+                              title="View Custom Domain details"
+                              aria-label="Explain Custom Domain filter"
+                            >
+                              <HelpCircle className="w-3 h-3" />
+                            </button>
+                          </div>
                           <select 
                             className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:border-slate-800 cursor-pointer font-sans font-normal"
                             value={domainFilter}
@@ -1364,7 +1397,18 @@ export default function Dashboard() {
 
                         {/* HTTPS */}
                         <div className="flex flex-col gap-1 min-w-[120px] flex-1 sm:flex-initial">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">HTTPS/Security</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">HTTPS/Security</span>
+                            <button
+                              type="button"
+                              onClick={() => setColumnGuideModal('https')}
+                              className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors"
+                              title="View HTTPS & Security details"
+                              aria-label="Explain HTTPS & Security filter"
+                            >
+                              <HelpCircle className="w-3 h-3" />
+                            </button>
+                          </div>
                           <select 
                             className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:border-slate-800 cursor-pointer font-sans font-normal"
                             value={httpsFilter}
@@ -1428,41 +1472,81 @@ export default function Dashboard() {
                       #
                     </th>
                     <th scope="col" className="sticky top-0 z-50 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider text-[11px] border-r border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
-                      <div className="flex items-center gap-1">
-                        Repository
-                        <button onClick={() => setColumnGuideModal('repository')} className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors" title="View details">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 min-w-0">
+                        <span className="whitespace-normal break-words [overflow-wrap:anywhere] leading-tight">
+                          Repository
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setColumnGuideModal('repository')}
+                          className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors self-start"
+                          title="View Repository details"
+                          aria-label="Explain Repository column"
+                        >
                           <HelpCircle className="w-3 h-3" />
                         </button>
                       </div>
                     </th>
                     <th scope="col" className="sticky top-0 z-40 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider text-[11px] border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
-                      <div className="flex items-center gap-1">
-                        Pages Status
-                        <button onClick={() => setColumnGuideModal('pagesStatus')} className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors" title="View details">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 min-w-0">
+                        <span className="whitespace-normal break-words [overflow-wrap:anywhere] leading-tight">
+                          Pages Status
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setColumnGuideModal('pagesStatus')}
+                          className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors self-start"
+                          title="View Pages Status details"
+                          aria-label="Explain Pages Status column"
+                        >
                           <HelpCircle className="w-3 h-3" />
                         </button>
                       </div>
                     </th>
                     <th scope="col" className="sticky top-0 z-40 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider text-[11px] border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
-                      <div className="flex items-center gap-1">
-                        Deploy Source
-                        <button onClick={() => setColumnGuideModal('deploySource')} className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors" title="View details">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 min-w-0">
+                        <span className="whitespace-normal break-words [overflow-wrap:anywhere] leading-tight">
+                          Deploy Source
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setColumnGuideModal('deploySource')}
+                          className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors self-start"
+                          title="View Deploy Source details"
+                          aria-label="Explain Deploy Source column"
+                        >
                           <HelpCircle className="w-3 h-3" />
                         </button>
                       </div>
                     </th>
                     <th scope="col" className="sticky top-0 z-40 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider text-[11px] border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
-                      <div className="flex items-center gap-1">
-                        Custom Domain
-                        <button onClick={() => setColumnGuideModal('customDomain')} className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors" title="View details font-sans">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 min-w-0">
+                        <span className="whitespace-normal break-words [overflow-wrap:anywhere] leading-tight">
+                          Custom Domain
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setColumnGuideModal('customDomain')}
+                          className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors self-start font-sans"
+                          title="View Custom Domain details"
+                          aria-label="Explain Custom Domain column"
+                        >
                           <HelpCircle className="w-3 h-3" />
                         </button>
                       </div>
                     </th>
                     <th scope="col" className="sticky top-0 z-40 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider text-[11px] border-b border-slate-200 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
-                      <div className="flex items-center gap-1">
-                        HTTPS & Security
-                        <button onClick={() => setColumnGuideModal('https')} className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors" title="View details">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 min-w-0">
+                        <span className="whitespace-normal break-words [overflow-wrap:anywhere] leading-tight">
+                          HTTPS & Security
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setColumnGuideModal('https')}
+                          className="text-slate-400 hover:text-indigo-500 focus:outline-none transition-colors self-start"
+                          title="View HTTPS & Security details"
+                          aria-label="Explain HTTPS & Security column"
+                        >
                           <HelpCircle className="w-3 h-3" />
                         </button>
                       </div>
