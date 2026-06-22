@@ -733,7 +733,7 @@ export default function Dashboard() {
   }, [filteredResults, pageSize]);
 
   // Virtualized list parameters & visible slice to support rendering thousands of items smoothly
-  const ROW_HEIGHT = 54;
+  const ROW_HEIGHT = 72;
   const { startIndex, visibleResults, topPadding, bottomPadding } = useMemo(() => {
     const totalItems = paginatedResults.length;
     const totalHeight = totalItems * ROW_HEIGHT;
@@ -1856,7 +1856,7 @@ const RepoRow = React.memo(({ repo, serialNumber, style }: { repo: RepositoryRes
       {/* Repository name with fork badge */}
       <td className="px-3 py-2 border-r border-slate-100 align-middle overflow-hidden">
         <div className="flex flex-col min-w-0 font-sans overflow-hidden">
-          <a href={repo.htmlUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-blue-600 hover:text-blue-800 hover:underline text-xs truncate block" title={repo.fullName}>
+          <a href={repo.htmlUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-blue-600 hover:text-blue-800 hover:underline text-xs whitespace-normal break-words [overflow-wrap:anywhere] min-w-0 max-w-full leading-tight" title={repo.fullName}>
             {repo.repoName}
           </a>
           <div className="flex items-center gap-1.5 mt-1 min-w-0 overflow-hidden">
