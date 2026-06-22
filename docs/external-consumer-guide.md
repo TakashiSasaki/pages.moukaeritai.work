@@ -1,5 +1,5 @@
 # External Consumer Guide
-Version: `1.7.34` (Organization Scan Contract & Baseline Hardening)
+Version: `1.7.35` (Organization Scan Contract & Baseline Hardening)
 
 This document provides instructions for external systems and users consuming data exported by the GitHub Pages Auditor. The application supports exporting audit data in JSON and CSV formats.
 

@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - UI Regression Test Plan
-Version: `1.7.34` (Organization Scan Contract & Baseline Hardening)
+Version: `1.7.35` (Organization Scan Contract & Baseline Hardening)
 
 This document contains the requirements and test matrix for the **frontend user interface regression testing**. Since deploying heavier testing frameworks (such as Playwright, Cypress, or Puppeteer) inside sandboxed containerized workspaces introduces runtime execution risks, this plan outlines the exact manual validation and future E2E automation matrix.
 

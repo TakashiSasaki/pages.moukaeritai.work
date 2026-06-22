@@ -1,6 +1,6 @@
-# Full Report Table UI Design (v1.7.34)
+# Full Report Table UI Design (v1.7.35)
 
-Version: `1.7.34` (Full Report Table UI Stabilization)
+Version: `1.7.35` (Full Report Table UI Stabilization)
 
 ## 1. Purpose and Scope
 This document governs the layout, design, and structural requirements of the Full Report table utilized in the `/results/:auditId/report` view (primarily implemented inside `src/components/Dashboard.tsx`).
