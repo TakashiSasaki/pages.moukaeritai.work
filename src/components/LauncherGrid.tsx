@@ -475,7 +475,7 @@ const LauncherCardItem = React.memo(function LauncherCardItem({
         <CircularDomainBadge site={site} />
       </a>
 
-      {isPressed && (
+      {(isPressed || isDragged) && (
         <div className={`absolute ${placementClasses} w-max max-w-[220px] bg-white border border-indigo-600 rounded-lg shadow-xl p-1.5 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100 ease-out`}>
           <div className={arrowBodyClasses}></div>
           <div className={arrowBorderClasses}></div>

@@ -1,5 +1,5 @@
 # GitHub Pages Auditor
-Version: `1.7.37` (Release Candidate Documentation Polish & Go/No-Go Gate)
+Version: `1.7.44` (Release Candidate Documentation Polish & Go/No-Go Gate)
 
 GitHub Pages Auditor is a multi-user web application that audits GitHub Pages settings across repositories accessible to fine-grained or classic Personal Access Tokens (PATs). It displays custom domain configuration status, HTTPS certificate state, and Pages deployment methods securely without modifying any settings.
 
@@ -117,7 +117,7 @@ firebase deploy --only firestore:rules
 *   **Active Production Region**: `asia-east1`
 *   **Deployment Status**: Google Cloud Run is our active, live runtime.
 *   **Custom Domain Status**: Active and canonical custom domain integration (`pages.moukaeritai.work`).
-*   **Current Milestone**: Milestone 1.7.37 (Release Candidate Documentation Polish & Go/No-Go Gate)
+*   **Current Milestone**: Milestone 1.7.44 (Release Candidate Documentation Polish & Go/No-Go Gate)
 *   **Export Schema Status**: V2 is the only current JSON export schema; CSV is a separate flat export format.
 
 ---
@@ -164,7 +164,7 @@ The **Launcher** surface displays a user's detected GitHub Pages sites, sharing 
 To guarantee stability, alignment, and release consistency across development cycles:
 - **Mandatory Version Bumps**: Every file-changing task performed by an agent must bump the patch version inside `package.json`.
 - **Sourced Authority**: The single source of truth for the application version is exclusively the `package.json` `"version"` field. All documentation (README, AGENTS, manuals) and dynamic runtime dependencies (User-Agent strings, API responses, client headers) must align dynamically with this package.json configuration.
-- **Commit Format**: All changes must culminate in a descriptive English commit message outlining the milestone and patch alignment (e.g., `chore(release): close development-complete baseline at 1.7.37`).
+- **Commit Format**: All changes must culminate in a descriptive English commit message outlining the milestone and patch alignment (e.g., `chore(release): close development-complete baseline at 1.7.44`).
 
 ---
 

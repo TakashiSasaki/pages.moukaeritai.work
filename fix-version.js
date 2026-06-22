@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 
-const VERSIONS_TO_REPLACE = ['1.7.37'];
-const NEW_VER = '1.7.37';
+const VERSIONS_TO_REPLACE = ['1.7.44'];
+const NEW_VER = '1.7.44';
 
 function replaceInFile(filePath) {
   let content = fs.readFileSync(filePath, 'utf-8');
