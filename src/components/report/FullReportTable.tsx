@@ -98,7 +98,11 @@ export const FullReportTable: React.FC<FullReportTableProps> = ({
               <col style={{ width: 'var(--report-col-domain)' }} />
               <col style={{ width: 'var(--report-col-https)' }} />
             </colgroup>
-            <ReportTableHeader setColumnGuideModal={setColumnGuideModal} />
+            <ReportTableHeader 
+              setColumnGuideModal={setColumnGuideModal} 
+              filteredCount={filteredResults.length}
+              totalCount={results ? results.length : 0}
+            />
             <tbody className="bg-white divide-y divide-gray-100 font-mono text-xs">
               {filteredResults.length === 0 ? (
                 <tr>

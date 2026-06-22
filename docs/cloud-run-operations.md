@@ -1,5 +1,5 @@
 # GitHub Pages Auditor - Cloud Run Operations Manual
-Version: `1.7.33` (Organization Scan Contract & Baseline Hardening)
+Version: `1.7.34` (Organization Scan Contract & Baseline Hardening)
 
 This document outlines standard operating procedures, architectural summaries, and verification guides for the production container runtime deployed on Google Cloud Run.
 

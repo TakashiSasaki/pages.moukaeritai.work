@@ -172,7 +172,7 @@ export const ReportFiltersToolbar: React.FC<ReportFiltersToolbarProps> = ({
                 Clear Filters
               </button>
             )}
-            <div className="text-right whitespace-nowrap">
+            <div className="text-right whitespace-nowrap hidden lg:block">
               <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider font-sans leading-none">Results</p>
               <p className="text-xs font-mono text-slate-700 font-semibold mt-1 leading-none">
                 {filteredCount} / {totalCount}
