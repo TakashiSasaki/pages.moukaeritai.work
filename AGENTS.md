@@ -138,14 +138,14 @@ This project has transitioned into an active **maintenance mode** state followin
   - **Milestone 1.7.<!-- -->4**: Launcher Icon Visual State Contract & Release-Candidate Readiness
   - **Milestone 1.7.<!-- -->5**: Release Candidate Smoke & Manual Verification baseline
   - **Milestone 1.7.<!-- -->6**: Release Candidate Reality Alignment & Operator Handoff
-  - **Milestone 1.7.31**: Release Candidate Documentation Polish & Go/No-Go Gate (Current active ready milestone).
+  - **Milestone 1.7.32**: Release Candidate Documentation Polish & Go/No-Go Gate (Current active ready milestone).
 - Added explicit environment validation modules for frontend (`src/lib/env.ts`) and backend (`server/env.ts`) checking configuration completeness without crashing runtime operations.
 - Extracted and formalized firestore paths into a decoupled module `src/lib/firestorePaths.ts`, fully tested in the suite.
 - Established a complete, isolated, and secure security ruleset in `firestore.rules` (pointed by `firebase.json`), fully verified using rule simulation tests (`tests/rules.test.ts`).
 - Centralized organization name validation into `src/lib/validation.ts`.
 - Removed all obsolete legacy references and schemas.
 - **Development Policy & v1.7.x Operational Contract**: 
-  - **Patch Version Governance**: Version `1.7.<!-- -->5` defined the RC baseline, and `1.7.31` solidifies the document/handoff reality. Every file-changing or documentation-changing coding-agent task targeting the `v1.7.x` line **MUST** bump the patch version in `package.json`, keeping all related documentation files (`README.md`, `AGENTS.md`, `docs/*.md`) and scripts (`scripts/releaseReadinessCheck.js` check version constant) perfectly synchronized.
+  - **Patch Version Governance**: Version `1.7.<!-- -->5` defined the RC baseline, and `1.7.32` solidifies the document/handoff reality. Every file-changing or documentation-changing coding-agent task targeting the `v1.7.x` line **MUST** bump the patch version in `package.json`, keeping all related documentation files (`README.md`, `AGENTS.md`, `docs/*.md`) and scripts (`scripts/releaseReadinessCheck.js` check version constant) perfectly synchronized.
   - **Strict Verification Gates**: All coding agents must run and verify that `npm test` and `npx node scripts/releaseReadinessCheck.js` succeed with zero errors. No task is complete without passing all offline, deterministic release check criteria.
   - **No-AI & Security Integrity**: Do not integrate external APIs, AI models (such as Gemini), or secondary backend service layers simply because credentials exist. The Express-side icon resolver retains strict protocol restrictions (only http/https), SSRF/localhost prevention, and SVG formatting exclusions to prevent script injection.
   - **Best-Effort & Non-blocking Design**: The launcher caching backend is safe, best-effort, and non-blocking. If a network lookup or cache query fails, the frontend must transition silently down the fallback hierarchy to direct PWA/Favicon URLs or generated initials without crashing the UI or raising alerts.
@@ -172,7 +172,7 @@ This project has transitioned into an active **maintenance mode** state followin
   - Current Live Production URL: `https://github-pages-auditor-1042140630327.asia-east1.run.app`
   - Region: `asia-east1`
   - Active Custom Domain: `pages.moukaeritai.work` (Active, Canonical URL)
-  - Current Major Milestone: Release Candidate Documentation Polish & Go/No-Go Gate (1.7.31)
+  - Current Major Milestone: Release Candidate Documentation Polish & Go/No-Go Gate (1.7.32)
   - Infrastructure Mutation Rule: Do not mutate DNS, Cloud Run, or Firebase Auth externally in coding-agent tasks. Only provide operator checklists.
   - Post-Assignment: Document required post-activation history.
 - **Crucial Warning**: Standard Firebase Hosting alone *cannot* run the Express backend. Firebase Hosting alone cannot run the Express backend. It must be paired with Cloud Run via proxy rewrites matching `/api/*` if edge CDN is desired.
@@ -189,7 +189,7 @@ This project has transitioned into an active **maintenance mode** state followin
 - Created `scripts/validateExamples.js` to continuously assert compliance for V2 and V2 exported samples alongside `npm run examples:validate`.
 - Defined `docs/external-consumer-guide.md` with strict interoperability requirements, ensuring registries and runtime retrievals remain out-of-scope.
 - Completely verified coverage of V2 deeply-nested `findings` taxonomy reflecting GitHub Pages DNS/SSL statuses.
-- Advanced primary build threshold to `1.7.31 (Release Candidate Documentation Polish & Go/No-Go Gate)` with patch version governance and public no-auth E2E validation controls.
+- Advanced primary build threshold to `1.7.32 (Release Candidate Documentation Polish & Go/No-Go Gate)` with patch version governance and public no-auth E2E validation controls.
 - Documented active Custom Domain `pages.moukaeritai.work`.
 - Documented icon/site metadata fetching feature representing best-effort non-blocking metadata audit findings.
 - Hardened release checks and documentation consistency checks.

@@ -2060,7 +2060,18 @@ const RepoRow = React.memo(({ repo, serialNumber, style }: { repo: RepositoryRes
       
       {/* Serial Number */}
       <td className="text-center text-[10px] text-slate-400 font-mono px-1 py-2 border-r border-slate-100 align-middle">
-        {serialNumber}
+        <div className="flex flex-col items-center justify-center gap-1">
+          <span>{serialNumber}</span>
+          <a 
+            href={repo.pagesSettingsUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="inline-flex items-center text-slate-400 hover:text-slate-600 transition-colors shrink-0 outline-none focus:ring-2 focus:ring-slate-300 rounded-sm"
+            title="Pages Settings"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </a>
+        </div>
       </td>
 
       {/* Repository name with fork badge */}
@@ -2083,15 +2094,6 @@ const RepoRow = React.memo(({ repo, serialNumber, style }: { repo: RepositoryRes
                 Archived
               </span>
             )}
-            <a 
-              href={repo.pagesSettingsUrl} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="inline-flex items-center text-slate-400 hover:text-slate-600 transition-colors shrink-0 outline-none focus:ring-2 focus:ring-slate-300 rounded-sm"
-              title="Pages Settings"
-            >
-              <Settings className="w-3.5 h-3.5" />
-            </a>
           </div>
         </div>
       </td>

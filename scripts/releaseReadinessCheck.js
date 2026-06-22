@@ -214,7 +214,7 @@ try {
 try {
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   const version = packageJson.version;
-  const EXPECTED_VERSION = '1.7.31';
+  const EXPECTED_VERSION = '1.7.32';
 
   // Validate SemVer format
   const semverRegex = /^\d+\.\d+\.\d+$/;
