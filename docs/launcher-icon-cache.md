@@ -1,4 +1,4 @@
-# Launcher Icon Cache Guide (v1.7.44)
+# Launcher Icon Cache Guide (v1.7.45)
 
 This document details the architecture, design decisions, data lifecycle, and security rules for the Launcher custom icon caching mechanism introduced in the `1.7.x` development run.
 
@@ -127,7 +127,7 @@ This circular visual state contract ensures full consistency in both normal grid
 
 ## 7. Release-Candidate Readiness Notes
 
-As of the **v1.7.44** milestone, the server-side icon resolver and Firestore icon caching systems are fully finalized, tested, and ready for release-candidate production gates.
+As of the **v1.7.45** milestone, the server-side icon resolver and Firestore icon caching systems are fully finalized, tested, and ready for release-candidate production gates.
 
 ### What is Operational and Validated
 - **Automated Rules Simulation**: Multi-tenant database security boundaries are verified via offline unit simulation routines. Unauthenticated or foreign tenant requests are fully blocked.

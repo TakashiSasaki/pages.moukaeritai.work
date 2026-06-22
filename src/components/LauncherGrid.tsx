@@ -587,6 +587,9 @@ export default function LauncherGrid({
   const [showControls, setShowControls] = React.useState(false);
   const [maxVisibleCount, setMaxVisibleCount] = React.useState<number>(visibleIconsRange ?? 20);
 
+  const [flashState, setFlashState] = React.useState<'up' | 'down' | null>(null);
+  const flashTimer = React.useRef<any>(null);
+
   // Sync props to state when they change (loading from Firestore)
   React.useEffect(() => {
     if (animationSpeed !== null && animationSpeed !== undefined) {
@@ -839,6 +842,21 @@ export default function LauncherGrid({
     const oldIds = sites.map(s => s.id);
 
     const hasOrderChanged = finalIds.some((id, index) => id !== oldIds[index]);
+
+    const oldIndex = oldIds.indexOf(dragId);
+    const newIndex = finalIds.indexOf(dragId);
+
+    if (hasOrderChanged && oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+      if (newIndex < oldIndex) {
+        setFlashState('up');
+      } else {
+        setFlashState('down');
+      }
+      flashTimer.current = setTimeout(() => {
+        setFlashState(null);
+      }, 500);
+    }
 
     if (hasOrderChanged && onOrderChange) {
       onOrderChange(finalIds);
@@ -1117,7 +1135,9 @@ export default function LauncherGrid({
         {/* 2D Physics Arena Playground */}
         <div 
           ref={arenaRef}
-          className="relative w-full flex-1 bg-white/40 backdrop-blur-xs border-y sm:border-2 border-slate-200/60 rounded-none sm:rounded-[32px] shadow-sm overflow-hidden select-none"
+          className={`relative w-full flex-1 backdrop-blur-xs border-y sm:border-2 border-slate-200/60 rounded-none sm:rounded-[32px] shadow-sm overflow-hidden select-none transition-colors duration-500 ${
+            flashState === 'up' ? 'bg-emerald-200/60' : flashState === 'down' ? 'bg-rose-200/60' : 'bg-white/40'
+          }`}
           style={{
             backgroundImage: 'radial-gradient(circle, #cbd5e1 1.5px, transparent 1.5px)',
             backgroundSize: '24px 24px',
