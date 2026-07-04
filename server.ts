@@ -321,6 +321,64 @@ app.post('/api/icon/resolve', verifyAuth, async (req, res) => {
   }
 });
 
+// 4. Developer Documents Endpoints
+app.get('/api/docs', verifyAuth, async (req, res) => {
+  try {
+    const docsDir = path.join(process.cwd(), 'docs');
+    const files = fs.readdirSync(docsDir);
+    
+    const docs = files
+      .filter(file => file.endsWith('.md'))
+      .map(file => ({
+        id: file,
+        title: file
+          .replace(/\.md$/, '')
+          .split(/[-_]/)
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' '),
+        source: 'docs'
+      }));
+
+    // Add root-level files
+    docs.unshift(
+      { id: 'README.md', title: 'README (App Guide)', source: 'root' },
+      { id: 'AGENTS.md', title: 'AGENTS (Rules & Architecture)', source: 'root' }
+    );
+
+    res.json(docs);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to read documentation index', details: error.message });
+  }
+});
+
+app.get('/api/docs/:docName', verifyAuth, async (req, res) => {
+  const { docName } = req.params;
+  
+  // Basic security: prevent directory traversal
+  const safeDocPattern = /^[a-zA-Z0-9\-_.]+\.md$/;
+  if (!safeDocPattern.test(docName)) {
+    return res.status(400).json({ error: 'Invalid document name' });
+  }
+
+  try {
+    let filePath = '';
+    if (docName === 'README.md' || docName === 'AGENTS.md') {
+      filePath = path.join(process.cwd(), docName);
+    } else {
+      filePath = path.join(process.cwd(), 'docs', docName);
+    }
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const content = fs.readFileSync(filePath, 'utf-8');
+    res.json({ id: docName, content });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to read document content', details: error.message });
+  }
+});
+
 // 3. Unauthenticated Health Check
 app.get('/healthz', (req, res) => {
   res.json({ ok: true });

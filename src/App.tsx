@@ -7,10 +7,11 @@ import { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import LauncherPage from './components/LauncherPage';
+import DeveloperDocs from './components/DeveloperDocs';
 import { AuthProvider, useAuth } from './AuthContext';
 import { validateFrontendFirebaseConfig } from './lib/env';
 import { saveLastPath, getLastPath } from './lib/userPrefs';
-import { LogOut, LogIn, UserCircle, Ghost, Key, Save, Loader2, CheckCircle, Github, HelpCircle, X, AlertCircle, Database, ShieldCheck, XCircle, LayoutGrid, List, Eye, EyeOff } from 'lucide-react';
+import { LogOut, LogIn, UserCircle, Ghost, Key, Save, Loader2, CheckCircle, Github, HelpCircle, X, AlertCircle, Database, ShieldCheck, XCircle, LayoutGrid, List, Eye, EyeOff, BookOpen } from 'lucide-react';
 
 function AppContent() {
   const { user, loading, signInWithGoogle, signInAsGuest, logout, hasStoredPat, savePatToFirestore } = useAuth();
@@ -257,15 +258,18 @@ function AppContent() {
                     <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                       <Key className="w-3.5 h-3.5" />
                       GitHub PAT
-                      <button onClick={() => setShowGuide(true)} className="text-slate-400 hover:text-emerald-600 transition-colors ml-0.5 cursor-pointer" title="How to get a PAT">
-                        <HelpCircle className="w-3.5 h-3.5" />
-                      </button>
                     </label>
-                    {hasStoredPat && (
-                      <span className="flex items-center text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 font-medium tracking-wide">
-                        <CheckCircle className="w-3 h-3 mr-0.5" /> Set
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setShowGuide(true)} className="text-[10px] text-slate-500 hover:text-emerald-600 transition-colors flex items-center gap-1 cursor-pointer" title="How to get a PAT">
+                        <HelpCircle className="w-3 h-3" />
+                        Token Guide
+                      </button>
+                      {hasStoredPat && (
+                        <span className="flex items-center text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 font-medium tracking-wide">
+                          <CheckCircle className="w-3 h-3 mr-0.5" /> Set
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
@@ -297,6 +301,17 @@ function AppContent() {
                   </div>
                   {patError && <p className="text-[10px] text-red-600 mt-1.5">{patError}</p>}
                   {patSuccess && <p className="text-[10px] text-emerald-600 mt-1.5">{patSuccess}</p>}
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex justify-between items-center">
+                    <span className="text-[10px] text-slate-400 font-medium">Resources</span>
+                    <Link 
+                      to="/docs" 
+                      onClick={() => setMenuOpen(false)}
+                      className="text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
+                      Developer Docs
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="p-3 border-b border-slate-100 bg-slate-50/50">
@@ -352,13 +367,6 @@ function AppContent() {
                   <img src="/icon.svg" alt="App Logo" className="w-6 h-6 drop-shadow-sm" />
                   <span className="truncate">GitHub Pages Auditor</span>
                 </Link>
-                <button 
-                  onClick={() => setShowGuide(true)}
-                  className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                >
-                  <HelpCircle className="w-4 h-4" />
-                  Token Guide
-                </button>
                 <button
                   onClick={() => setShowInfoModal(true)}
                   className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
@@ -411,15 +419,18 @@ function AppContent() {
                           <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                             <Key className="w-3.5 h-3.5" />
                             GitHub PAT
-                            <button onClick={() => setShowGuide(true)} className="text-slate-400 hover:text-emerald-600 transition-colors ml-0.5 cursor-pointer" title="How to get a PAT">
-                              <HelpCircle className="w-3.5 h-3.5" />
-                            </button>
                           </label>
-                          {hasStoredPat && (
-                            <span className="flex items-center text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 font-medium tracking-wide">
-                              <CheckCircle className="w-3 h-3 mr-0.5" /> Set
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setShowGuide(true)} className="text-[10px] text-slate-500 hover:text-emerald-600 transition-colors flex items-center gap-1 cursor-pointer" title="How to get a PAT">
+                              <HelpCircle className="w-3 h-3" />
+                              Token Guide
+                            </button>
+                            {hasStoredPat && (
+                              <span className="flex items-center text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 font-medium tracking-wide">
+                                <CheckCircle className="w-3 h-3 mr-0.5" /> Set
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
@@ -451,6 +462,17 @@ function AppContent() {
                         </div>
                         {patError && <p className="text-[10px] text-red-600 mt-1.5">{patError}</p>}
                         {patSuccess && <p className="text-[10px] text-emerald-600 mt-1.5">{patSuccess}</p>}
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex justify-between items-center">
+                          <span className="text-[10px] text-slate-400 font-medium">Resources</span>
+                          <Link 
+                            to="/docs" 
+                            onClick={() => setMenuOpen(false)}
+                            className="text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
+                            Developer Docs
+                          </Link>
+                        </div>
                       </div>
 
                       <div className="p-3 border-b border-slate-100 bg-slate-50/50">
@@ -511,6 +533,8 @@ function AppContent() {
         )}
         <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col overflow-hidden">
           <Routes>
+            <Route path="/docs" element={<DeveloperDocs />} />
+            <Route path="/docs/:docId" element={<DeveloperDocs />} />
             <Route path="/launcher" element={<LauncherPage />} />
             <Route path="/launcher-preview" element={<Dashboard />} />
             <Route path="/" element={<Dashboard />} />

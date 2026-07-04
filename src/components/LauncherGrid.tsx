@@ -348,6 +348,9 @@ const LauncherCardItem = React.memo(function LauncherCardItem({
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return; // Only main left click
 
+    // Capture the pointer to ensure drag events are not lost even if moving quickly out of element
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+
     startX.current = e.clientX;
     startY.current = e.clientY;
     startNodeY.current = y;
@@ -391,7 +394,11 @@ const LauncherCardItem = React.memo(function LauncherCardItem({
     }
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent | PointerEvent) => {
+    if ('pointerId' in e && e.currentTarget && e.currentTarget instanceof HTMLElement && e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
@@ -466,9 +473,12 @@ const LauncherCardItem = React.memo(function LauncherCardItem({
         className="cursor-pointer active:scale-95 transition-all duration-200 select-none touch-none"
         onPointerDown={handlePointerDown}
         onClick={(e) => {
-          if (hasMoved.current || wasHeld.current) {
-            e.preventDefault();
-          }
+          // Prevent single click from navigating
+          e.preventDefault();
+        }}
+        onDoubleClick={(e) => {
+          e.preventDefault();
+          window.open(site.url, '_blank', 'noopener,noreferrer');
         }}
         title={site.url}
       >
@@ -575,6 +585,7 @@ export default function LauncherGrid({
 }: LauncherGridProps) {
   const { user } = useAuth();
   const arenaRef = React.useRef<HTMLDivElement>(null);
+  const arenaRectRef = React.useRef<DOMRect | null>(null);
   const [dimensions, setDimensions] = React.useState({ width: 800, height: 500 });
   
   const [physicsNodes, setPhysicsNodes] = React.useState<PhysicsNode[]>([]);
@@ -801,6 +812,9 @@ export default function LauncherGrid({
 
   const handleDragStart = React.useCallback((e: React.PointerEvent, id: string) => {
     if (readOnly) return;
+    if (arenaRef.current) {
+      arenaRectRef.current = arenaRef.current.getBoundingClientRect();
+    }
     activeDragIdRef.current = id;
     setActiveDragId(() => id);
     setPhysicsNodes(() => [...nodesRef.current]);
@@ -871,7 +885,8 @@ export default function LauncherGrid({
     const dragId = activeDragIdRef.current;
     if (!dragId || !arenaRef.current) return;
 
-    const rect = arenaRef.current.getBoundingClientRect();
+    // Utilize cached rect for drastic performance improvement during heavy drag events
+    const rect = arenaRectRef.current || arenaRef.current.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
 
@@ -879,18 +894,16 @@ export default function LauncherGrid({
     const cx = Math.max(margin, Math.min(dimensions.width - margin, px));
     const cy = Math.max(margin, Math.min(dimensions.height - margin, py));
 
-    nodesRef.current = nodesRef.current.map(node => {
-      if (node.id === dragId) {
-        return {
-          ...node,
-          x: cx,
-          y: cy,
-          vx: 0,
-          vy: 0
-        };
+    const currentNodes = nodesRef.current;
+    for (let i = 0; i < currentNodes.length; i++) {
+      if (currentNodes[i].id === dragId) {
+        currentNodes[i].x = cx;
+        currentNodes[i].y = cy;
+        currentNodes[i].vx = 0;
+        currentNodes[i].vy = 0;
+        break;
       }
-      return node;
-    });
+    }
     
     // OPTIMIZATION: Update dragged exact pos immediately via style bypassing state re-render
     const el = document.getElementById(`launcher-node-${dragId}`);
